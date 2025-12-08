@@ -1,0 +1,64 @@
+archives:
+  - formats:
+      - tar.gz
+    # use zip for windows
+    format_overrides:
+      - formats:
+          - zip
+        goos: windows
+    # this name template makes the release distribution follow a common
+    # convention: ProjectName_Version_OS_Arch
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- .Version }}_
+      {{- .Os }}_
+      {{- .Arch }}
+
+brews:
+  - name: vesshelm
+    description: "Vesshelm is a CLI tool for managing Helm charts."
+    homepage: "https://github.com/deimosfr/vesshelm"
+    license: "MIT"
+    repository:
+      owner: deimosfr
+      name: homebrew-vesshelm
+      token: "{{ .Env.GITHUB_TOKEN }}"
+    commit_author:
+      name: goreleaserbot
+      email: bot@goreleaser.com
+
+
+builds:
+  - id: vesshelm
+    main: goreleaser.go
+    binary: vesshelm
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    hooks:
+      post:
+        - ./.goreleaser_hook.sh {{ .Arch }} {{ .Os }} {{ .ProjectName }}
+
+changelog:
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+  sort: asc
+
+checksum:
+  name_template: 'checksums.txt'
+
+project_name: vesshelm
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+version: 2

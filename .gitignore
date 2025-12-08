@@ -1,0 +1,4 @@
+target/
+vesshelm.yaml
+.zig-cache/
+debug_*.log
