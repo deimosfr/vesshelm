@@ -1,0 +1,37 @@
+[package]
+name = "vesshelm"
+version = "1.2.2"
+edition = "2024"
+license = "GPL-3.0-or-later"
+
+[dependencies]
+clap = { version = "4.5.53", features = ["derive"] }
+tokio = { version = "1.48", features = ["full"] }
+which = "8.0"
+anyhow = "1.0.100"
+thiserror = "2.0.17"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_yaml_ng = "0.10"
+indicatif = "0.18.3"
+tempfile = "3.23.0"
+validator = { version = "0.20.0", features = ["derive"] }
+git2 = { version = "0.20.3", features = ["vendored-libgit2", "vendored-openssl"] }
+walkdir = "2.5.0"
+console = "0.16.2"
+daggy = "0.9.0"
+petgraph = "0.8.3"
+ptree = "0.5.2"
+colored = "3.0.0"
+dialoguer = "0.12.0"
+semver = "1.0.27"
+regex = "1.12.2"
+
+[dev-dependencies]
+assert_cmd = "2.1.1"
+mockall = "0.14.0"
+predicates = "3.1.3"
+
+[profile.release]
+strip = true
+opt-level = "z"
+codegen-units = 1

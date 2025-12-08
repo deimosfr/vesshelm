@@ -1,0 +1,5 @@
+- [x] Create `util::error` module for error formatting logic
+- [x] Implement `format_validation_error` helper to parse and beautify `validator::ValidationErrors`
+- [x] Update `main.rs` to use fancy error reporting
+- [x] Verify validation errors are readable/fancy
+- [x] Verify general errors are readable/fancy
