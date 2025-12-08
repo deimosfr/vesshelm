@@ -1,0 +1,35 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+
+  - repo: local
+    hooks:
+      - id: cargo-fmt
+        name: cargo fmt
+        entry: bash -c 'if command -v cargo >/dev/null 2>&1; then exec cargo fmt -- --check; else exec bash -l -c "cargo fmt -- --check"; fi'
+        language: system
+        types: [rust]
+        pass_filenames: false
+      - id: cargo-check
+        name: cargo check
+        entry: bash -c 'if command -v cargo >/dev/null 2>&1; then exec cargo check; else exec bash -l -c "cargo check"; fi'
+        language: system
+        types: [rust]
+        pass_filenames: false
+      - id: cargo-clippy
+        name: cargo clippy
+        entry: bash -c 'if command -v cargo >/dev/null 2>&1; then exec cargo clippy -- -D warnings; else exec bash -l -c "cargo clippy -- -D warnings"; fi'
+        language: system
+        types: [rust]
+        pass_filenames: false
+      - id: cargo-test
+        name: cargo test
+        entry: bash -c 'if command -v cargo >/dev/null 2>&1; then exec cargo test; else exec bash -l -c "cargo test"; fi'
+        language: system
+        types: [rust]
+        pass_filenames: false

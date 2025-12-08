@@ -1,0 +1,12 @@
+- [x] Update `ProgressTracker` in `src/util/progress.rs` to support "hidden" mode.
+- [x] Add `no_progress` flag to CLI definitions.
+- [x] Pass `no_progress` flag to `ProgressTracker` in `sync.rs` and `deploy.rs`.
+- [x] Add blank line before summary in `sync.rs` and `deploy.rs`.
+- [x] Implement `suspend` method in `ProgressTracker` (`src/util/progress.rs`).
+- [x] Use `tracker.suspend` in `deploy.rs` around the interactive confirmation.
+- [x] Verify `--no-progress` hides the bar but shows logs.
+- [x] Verify blank line appears before summary.
+- [x] Verify interactive deployment with progress bar enabled.
+- [x] Ensure progress bar is hidden/cleared during prompt.
+- [x] Add blank line before confirmation prompt.
+- [x] Verify blank line and progress bar is hidden during prompt.
