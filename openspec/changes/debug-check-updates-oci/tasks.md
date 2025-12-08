@@ -1,0 +1,2 @@
+- [x] Improve OCI error reporting <!-- id: 1 -->
+  - Modify `src/cli/commands/check_updates.rs` to capture and display `stderr` when `helm show chart` fails.

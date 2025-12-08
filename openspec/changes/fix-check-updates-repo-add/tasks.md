@@ -1,0 +1,3 @@
+- [x] Add requirement for repo registration to check-updates spec <!-- id: 0 -->
+- [x] Implement `helm repo add` logic in `check-updates` command <!-- id: 1 -->
+- [x] Verify with `mealie` chart scenario <!-- id: 2 -->

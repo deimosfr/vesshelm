@@ -1,0 +1,4 @@
+- [x] Update `(up to date)` color to green in `sync.rs` <!-- id: 0 -->
+- [x] Update `(local chart)` color to blue in `sync.rs` <!-- id: 1 -->
+- [x] Update `[SKIP]` status color to grey (dimmed) in `sync.rs` <!-- id: 2 -->
+- [x] Verify output colors match requirements <!-- id: 3 -->

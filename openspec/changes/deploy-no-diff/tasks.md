@@ -1,0 +1,6 @@
+- [x] Update `DeployArgs` in `src/cli/commands/mod.rs` to include `--no-diff` <!-- id: 0 -->
+- [x] Update `src/cli/commands/deploy.rs` to check `no_diff` flag <!-- id: 1 -->
+- [x] Add integration test for `--no-diff` in `tests/cli/commands/deploy.rs` <!-- id: 2 -->
+- [x] Fix `DeployArgs` struct initialization in all tests (e.g., `tests/clients_test.rs`) <!-- id: 3 -->
+- [x] Fix error message assertion in `test_deploy_no_diff_conflict_dry_run` <!-- id: 4 -->
+- [x] Add test for `no_diff` acting as implied non-interactive (confirmation skipped) <!-- id: 5 -->

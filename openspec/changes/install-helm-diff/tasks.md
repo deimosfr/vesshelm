@@ -1,0 +1,6 @@
+- [x] implement `helm plugin list` check logic <!-- id: 0 -->
+- [x] implement `helm plugin list` check logic <!-- id: 0 -->
+- [x] implement `helm plugin install` logic with `--verify` support <!-- id: 1 -->
+- [x] integrate check and install into `init` command <!-- id: 2 -->
+- [x] verify `init` installs diff plugin when missing <!-- id: 3 -->
+- [x] verify `init` skips install when present <!-- id: 4 -->

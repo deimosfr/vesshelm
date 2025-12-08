@@ -1,0 +1,7 @@
+- [x] Implement `get_latest_version_oci` <!-- id: 1 -->
+  - parsing `helm show chart oci://...` output to extract version.
+- [x] Update `check_updates` loop <!-- id: 2 -->
+  - Add match arm for `RepoType::Oci`.
+  - Call `get_latest_version_oci` and compare with current.
+- [x] Verify with mock <!-- id: 3 -->
+  - Update `clients_test.rs` to mock `helm show chart` for OCI.

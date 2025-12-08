@@ -1,0 +1,7 @@
+- [x] Update `src/cli/commands/delete.rs` to handle duplicate matches.
+  - [x] Implement detection of multiple charts with same name.
+  - [x] Implement `Select` prompt to choose namespace if duplicates exist.
+  - [x] Ensure the selected chart is used for subsequent operations.
+- [x] Implement non-destructive removal in `src/util/config_updater.rs`.
+  - [x] `remove_chart(&Path, &str /* name */, &str /* namespace */)`
+  - [x] `remove_repository(&Path, &str /* name */)`

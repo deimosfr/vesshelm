@@ -1,0 +1,5 @@
+- [x] Update `check-updates` OCI logic <!-- id: 1 -->
+  - Modify `src/cli/commands/check_updates.rs` to correctly construct `chart_ref` for OCI repositories.
+  - Reuse/duplicate logic from `SyncEngine` (strict path segment matching).
+- [x] Verify `check-updates` with OCI <!-- id: 2 -->
+  - Add test case or verification step.

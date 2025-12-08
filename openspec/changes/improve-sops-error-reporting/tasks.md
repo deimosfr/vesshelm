@@ -1,0 +1,2 @@
+- [x] Implement improved error formatting in `src/cli/commands/deploy.rs`
+- [x] Verify that missing variables now report the specific variable name

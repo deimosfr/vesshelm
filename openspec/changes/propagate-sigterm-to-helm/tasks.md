@@ -1,0 +1,4 @@
+- [x] Refactor `deploy.rs` signal handling to propagate the specific signal received (SIGINT or SIGTERM) instead of defaulting to SIGTERM.
+- [x] Replace external `kill` command usage with native libc/nix signal sending if possible, or ensure `kill` call is robust.
+- [x] Ensure `vesshelm` waits for the child process to exit after signaling, with a reasonable timeout (e.g., 10-30s) before force killing.
+- [x] Verify that the "Summary" and error reporting still work during an interrupted deployment.

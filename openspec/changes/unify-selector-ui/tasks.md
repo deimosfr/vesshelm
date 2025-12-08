@@ -1,0 +1,6 @@
+- [x] Add `selection_label` method to `Chart` struct <!-- id: 1 -->
+- [x] Update `delete.rs` to use `chart.selection_label()` <!-- id: 2 -->
+- [x] Update `deploy.rs` to use `chart.selection_label()` <!-- id: 3 -->
+- [x] Update `uninstall.rs` to use `chart.selection_label()` <!-- id: 4 -->
+- [x] Verify UI consistency manually or via screenshot review <!-- id: 5 -->
+  - Verified via code review and compilation.

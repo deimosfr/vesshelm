@@ -1,0 +1,4 @@
+- [x] Update `src/cli/commands/deploy.rs` to handle dry-run status <!-- id: 0 -->
+    - Change `dry_run` block to return a non-deployed status (e.g., `DeployStatus::Ignored` or similar, or just don't increment).
+    - Verify `deployed_count` is 0 in dry-run.
+- [x] Verify summary output <!-- id: 1 -->

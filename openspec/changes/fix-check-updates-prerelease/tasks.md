@@ -1,0 +1,3 @@
+- [ ] Add requirement for pre-release fallback to check-updates spec <!-- id: 0 -->
+- [ ] Implement fallback logic in `get_latest_version` <!-- id: 1 -->
+- [ ] Verify with `mealie` chart scenario <!-- id: 2 -->

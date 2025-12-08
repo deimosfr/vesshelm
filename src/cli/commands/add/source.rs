@@ -1,0 +1,314 @@
+use crate::clients::artifacthub::{ArtifactHubClient, Package};
+use crate::config::RepoType;
+use crate::error::VesshelmError;
+use regex::Regex;
+
+pub struct ChartDetails {
+    pub repo_name: String,
+    pub repo_url: String,
+    pub chart_name: String,
+    pub version: Option<String>,
+    pub chart_path: Option<String>,
+    pub repo_type: RepoType,
+    pub comment: Option<String>,
+}
+
+use crate::util::interaction::UserInteraction;
+
+#[async_trait::async_trait]
+pub trait ChartSource {
+    async fn prompt_details(
+        &self,
+        interaction: &(dyn UserInteraction + Sync),
+    ) -> Result<ChartDetails, VesshelmError>;
+}
+
+pub struct ArtifactHubSource;
+pub struct GitSource;
+pub struct OciSource;
+
+fn parse_ah_url(url: &str) -> Result<(String, String), VesshelmError> {
+    let re = Regex::new(r"artifacthub\.io/packages/helm/([^/]+)/([^/?]+)")
+        .map_err(crate::config::error::ConfigError::Regex)
+        .map_err(VesshelmError::from)?;
+    let caps = re.captures(url).ok_or_else(|| VesshelmError::CommandFailed("Invalid Artifact Hub URL format. Expected: https://artifacthub.io/packages/helm/<repo>/<chart>".to_string()))?;
+    let repo = caps
+        .get(1)
+        .map(|m| m.as_str().to_string())
+        .unwrap_or_default();
+    let chart = caps
+        .get(2)
+        .map(|m| m.as_str().to_string())
+        .unwrap_or_default();
+    Ok((repo, chart))
+}
+
+fn derive_git(url: &str, chart_path: &str) -> Result<(String, String), VesshelmError> {
+    let url_clean = url.trim_end_matches('/');
+    // Strip .git only if it's at the end
+    let url_no_git = url_clean.strip_suffix(".git").unwrap_or(url_clean);
+
+    let repo_name = url_no_git
+        .split('/')
+        .next_back()
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| {
+            VesshelmError::CommandFailed(format!("Could not derive repo name from URL '{}'", url))
+        })?
+        .to_string();
+
+    let chart_name = chart_path
+        .trim_end_matches('/')
+        .split('/')
+        .next_back()
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| {
+            VesshelmError::CommandFailed(format!(
+                "Could not derive chart name from path '{}'",
+                chart_path
+            ))
+        })?
+        .to_string();
+
+    Ok((repo_name, chart_name))
+}
+
+fn derive_oci(url: &str) -> Result<(String, String, String), VesshelmError> {
+    if !url.starts_with("oci://") {
+        return Err(VesshelmError::CommandFailed(
+            "URL must start with 'oci://'".to_string(),
+        ));
+    }
+
+    let parts: Vec<&str> = url.split('/').collect();
+    // Expected format: oci://host/path/to/chart
+    // parts[0] = "oci:", parts[1] = "", parts[2] = host
+
+    if parts.len() < 3 {
+        return Err(VesshelmError::CommandFailed(format!(
+            "Invalid OCI URL format '{}'",
+            url
+        )));
+    }
+
+    let (repo_url, chart_name_derived) = if let Some((last, rest)) = parts.split_last() {
+        if last.is_empty() {
+            return Err(VesshelmError::CommandFailed(
+                "OCI URL cannot end with a slash or be empty".to_string(),
+            ));
+        }
+        (rest.join("/"), last.to_string())
+    } else {
+        // Should be unreachable if len >= 3
+        return Err(VesshelmError::CommandFailed(
+            "Invalid OCI URL parsing".to_string(),
+        ));
+    };
+
+    // For OCI repo name derivation, we use chart name as default
+    let repo_name = chart_name_derived.clone();
+    Ok((repo_name, repo_url, chart_name_derived))
+}
+
+fn map_package_to_details(package: Package, comment: Option<String>) -> ChartDetails {
+    let repo_type = if package.repository.url.starts_with("oci://") {
+        RepoType::Oci
+    } else {
+        RepoType::Helm
+    };
+
+    ChartDetails {
+        repo_name: package.repository.name,
+        repo_url: package.repository.url,
+        chart_name: package.name,
+        version: Some(package.version),
+        chart_path: None,
+        repo_type,
+        comment,
+    }
+}
+
+#[async_trait::async_trait]
+impl ChartSource for ArtifactHubSource {
+    async fn prompt_details(
+        &self,
+        interaction: &(dyn UserInteraction + Sync),
+    ) -> Result<ChartDetails, VesshelmError> {
+        let url: String = interaction.input("Enter Artifact Hub URL", None)?;
+
+        let (repo_arg, chart_arg) = parse_ah_url(&url)?;
+        println!("Detected: Repo={}, Chart={}", repo_arg, chart_arg);
+
+        let client = ArtifactHubClient::new();
+        let package: Package = client
+            .get_package_details(&repo_arg, &chart_arg)
+            .await
+            .map_err(crate::clients::error::ClientError::from)?;
+
+        println!(
+            "Found chart: {} v{} from repo {}",
+            package.name, package.version, package.repository.url
+        );
+
+        Ok(map_package_to_details(package, Some(url)))
+    }
+}
+
+#[async_trait::async_trait]
+impl ChartSource for GitSource {
+    async fn prompt_details(
+        &self,
+        interaction: &(dyn UserInteraction + Sync),
+    ) -> Result<ChartDetails, VesshelmError> {
+        let url: String = interaction.input("Enter Git Repository URL", None)?;
+
+        let chart_path: String = interaction.input("Enter path to chart in repo", None)?;
+
+        let version: String = interaction.input("Enter Version (commit/tag/branch)", None)?;
+
+        let (repo_name, chart_name) = derive_git(&url, &chart_path)?;
+
+        Ok(ChartDetails {
+            repo_name,
+            repo_url: url.clone(),
+            chart_name,
+            version: Some(version),
+            chart_path: Some(chart_path),
+            repo_type: RepoType::Git,
+            comment: Some(url),
+        })
+    }
+}
+
+#[async_trait::async_trait]
+impl ChartSource for OciSource {
+    async fn prompt_details(
+        &self,
+        interaction: &(dyn UserInteraction + Sync),
+    ) -> Result<ChartDetails, VesshelmError> {
+        let url: String = interaction.input("Enter OCI URL", None)?;
+
+        let version: String = interaction.input("Enter Version", None)?;
+
+        let (repo_name, repo_url, chart_name) = derive_oci(&url)?;
+
+        Ok(ChartDetails {
+            repo_name,
+            repo_url,
+            chart_name,
+            version: Some(version),
+            chart_path: None,
+            repo_type: RepoType::Oci,
+            comment: Some(url),
+        })
+    }
+}
+
+pub fn get_source(selection: usize) -> Option<Box<dyn ChartSource>> {
+    match selection {
+        0 => Some(Box::new(ArtifactHubSource)),
+        1 => Some(Box::new(GitSource)),
+        2 => Some(Box::new(OciSource)),
+        _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::clients::artifacthub::Repository;
+
+    use super::*;
+
+    #[test]
+    fn test_parse_ah_url_valid() {
+        let url = "https://artifacthub.io/packages/helm/gissilabs/vaultwarden";
+        let (repo, chart) = parse_ah_url(url).unwrap();
+        assert_eq!(repo, "gissilabs");
+        assert_eq!(chart, "vaultwarden");
+    }
+
+    #[test]
+    fn test_parse_ah_url_invalid() {
+        let url = "https://google.com";
+        assert!(parse_ah_url(url).is_err());
+    }
+
+    #[test]
+    fn test_derive_git_valid() {
+        let url = "https://github.com/kubernetes-csi/csi-driver-smb";
+        let path = "charts/v1.19.1/csi-driver-smb";
+        let (repo, chart) = derive_git(url, path).unwrap();
+        assert_eq!(repo, "csi-driver-smb");
+        assert_eq!(chart, "csi-driver-smb");
+
+        // With .git suffix
+        let url_git = "https://github.com/kubernetes-csi/csi-driver-smb.git";
+        let (repo2, chart2) = derive_git(url_git, path).unwrap();
+        assert_eq!(repo2, "csi-driver-smb");
+        assert_eq!(chart2, "csi-driver-smb");
+    }
+
+    #[test]
+    fn test_derive_git_invalid() {
+        // Empty URL
+        assert!(derive_git("", "foo").is_err());
+        // Empty Path
+        assert!(derive_git("https://foo.com", "").is_err());
+        // Just slashes
+        assert!(derive_git("///", "///").is_err());
+    }
+
+    #[test]
+    fn test_map_package_helm() {
+        let pkg = Package {
+            name: "chart-helm".to_string(),
+            version: "1.2.3".to_string(),
+            repository: Repository {
+                name: "repo".to_string(),
+                url: "https://charts.example.com".to_string(),
+            },
+        };
+
+        let details = map_package_to_details(pkg, None);
+        assert_eq!(details.repo_type, RepoType::Helm);
+        assert_eq!(details.repo_url, "https://charts.example.com");
+        // Bug reproduction: This should be "repo", but code currently sets it to "chart-helm"
+        assert_eq!(details.repo_name, "repo");
+    }
+
+    #[test]
+    fn test_map_package_oci() {
+        let pkg = Package {
+            name: "chart-oci".to_string(),
+            version: "0.0.1".to_string(),
+            repository: Repository {
+                name: "repo".to_string(),
+                url: "oci://registry.example.com/repo/chart-oci".to_string(),
+            },
+        };
+
+        let details = map_package_to_details(pkg, None);
+        assert_eq!(details.repo_type, RepoType::Oci);
+        assert_eq!(
+            details.repo_url,
+            "oci://registry.example.com/repo/chart-oci"
+        );
+    }
+
+    #[test]
+    fn test_derive_oci_valid() {
+        let url = "oci://code.forgejo.org/forgejo-helm/forgejo";
+        let (repo_name, repo_url, chart_name) = derive_oci(url).unwrap();
+        assert_eq!(repo_name, "forgejo");
+        assert_eq!(chart_name, "forgejo");
+        assert_eq!(repo_url, "oci://code.forgejo.org/forgejo-helm");
+    }
+
+    #[test]
+    fn test_derive_oci_invalid() {
+        // Must start with oci://
+        assert!(derive_oci("https://google.com").is_err());
+        // Too short
+        assert!(derive_oci("oci://").is_err());
+    }
+}

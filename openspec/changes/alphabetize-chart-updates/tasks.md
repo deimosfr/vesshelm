@@ -1,0 +1,4 @@
+- [x] Sort charts in `check_updates.rs` <!-- id: 1 -->
+  - Sort `config.charts` by name before the main loop.
+- [x] Verify sorting <!-- id: 2 -->
+  - Add a test case with unsorted config and verify execution order (e.g., by mocking output or side effects).

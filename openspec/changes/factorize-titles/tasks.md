@@ -1,0 +1,7 @@
+- [ ] Create `src/util/ui.rs` with `style_step` function
+- [ ] Register `mod ui` in `src/util/mod.rs`
+- [ ] Refactor usage in `src/cli/commands/deploy.rs`
+- [ ] Refactor usage in `src/cli/commands/delete.rs`
+- [ ] Refactor usage in `src/cli/commands/uninstall.rs`
+- [ ] Search and refactor other occurrences of `style("==>")`
+- [ ] Verify output consistency with a dry-run

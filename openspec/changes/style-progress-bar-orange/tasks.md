@@ -1,0 +1,3 @@
+- [x] Update `ProgressTracker` style in `src/util/progress.rs` to use orange/yellow color.
+- [x] ensure a blank line is printed before the progress bar starts in `ProgressTracker::new`.
+- [x] Verify the visual appearance. (Implied by build success and user request to apply)

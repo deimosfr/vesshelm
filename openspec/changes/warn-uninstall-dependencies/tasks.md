@@ -1,0 +1,7 @@
+- [x] Implement dependency check logic
+    - [x] Update `src/util/dag.rs` to expose graph or helper to find dependents
+    - [x] In `uninstall.rs`, call helper to get list of dependents
+- [x] Update CLI output
+    - [x] If dependents found, show warning listing them
+    - [x] If no dependents, show "Safe to remove regarding dependencies" message
+- [x] Verify behavior with tests

@@ -1,0 +1,4 @@
+- [x] Verify DAG sorting behavior with a reproduction test
+- [x] Analyze why DAG order might be violated (e.g. non-stable sort, missing edges)
+- [x] Implement fix for DAG sorting if incorrect
+- [x] Ensure `deploy` command respects the corrected order

@@ -1,0 +1,3 @@
+- [x] Update `src/cli/commands/uninstall.rs` to use `HelmClient::uninstall`.
+- [x] Remove manual `Command::new("helm")` logic from `uninstall.rs`.
+- [x] Verify functionality (ensure existing behavior is preserved or improved).

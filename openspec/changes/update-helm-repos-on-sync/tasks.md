@@ -1,0 +1,3 @@
+- [x] Implement `helm repo update` logic in `sync.rs` <!-- id: 0 -->
+- [x] Verify `helm repo update` runs when needed <!-- id: 1 -->
+- [x] Verify `helm repo update` does NOT run when all charts are skipped <!-- id: 2 -->

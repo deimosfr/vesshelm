@@ -1,0 +1,11 @@
+- [x] Refactor `HelmClient::pull` signature <!-- id: 1 -->
+  - Update trait definition in `src/clients/helm.rs` to take `chart_ref: &str` instead of `repo` and `chart`.
+  - Update `RealHelmClient` implementation.
+  - Update `MockHelmClient` usage in tests.
+- [x] Update `SyncEngine` OCI logic <!-- id: 2 -->
+  - Modify `src/engine/sync.rs` to construct the correct reference string based on `RepoType`.
+  - Implement smart OCI URL construction (handle trailing naming).
+- [x] Verify OCI sync <!-- id: 3 -->
+  - Add test case for full OCI URL in config.
+- [x] Refine OCI logic for path boundaries <!-- id: 4 -->
+  - Ensure OCI URL matching checks strict path segments to avoid false positives with suffixes.

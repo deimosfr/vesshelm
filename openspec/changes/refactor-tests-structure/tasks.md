@@ -1,0 +1,9 @@
+- [x] Create directory structure `tests/cli/commands`
+- [x] Create `tests/cli/mod.rs` and `tests/cli/commands/mod.rs` to expose modules
+- [x] Move and merge `sync` related tests to `tests/cli/commands/sync.rs`
+- [x] Move and merge `deploy` related tests to `tests/cli/commands/deploy.rs`
+- [x] Move and merge `check_updates` related tests to `tests/cli/commands/check_updates.rs`
+- [x] Move and merge `validate` related tests to `tests/cli/commands/validate.rs`
+- [x] Move `init.rs`, `graph.rs`, `uninstall.rs`, `version.rs` to `tests/cli/commands/`
+- [x] Verify all tests pass
+- [x] Remove old test files

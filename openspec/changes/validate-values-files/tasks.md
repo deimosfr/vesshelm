@@ -1,0 +1,4 @@
+- [x] Update `validate_config` to check `values_files` existence <!-- id: 0 -->
+- [x] Add `values_file_not_found` validation error code <!-- id: 1 -->
+- [x] Implement error handling for this new error type <!-- id: 2 -->
+- [x] Verify validation fails for missing files <!-- id: 3 -->

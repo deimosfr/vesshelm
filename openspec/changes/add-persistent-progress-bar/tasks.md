@@ -1,0 +1,7 @@
+- [x] Create `ProgressTracker` struct to encapsulate `indicatif` logic for global progress.
+- [x] Implement `ProgressTracker` in `sync.rs` to replace per-chart spinners with a global bar + log lines.
+- [x] Implement `ProgressTracker` in `deploy.rs` to Wrap the deployment loop.
+- [x] Ensure all `println!` calls are routed through the progress bar's `suspend` or `println` method to avoid glitches.
+- [x] Style the progress bar to be "fancy" (using emojis, colors, and smooth characters).
+- [x] Verify `sync` command shows global progress and individual chart logs.
+- [x] Verify `deploy` command shows global progress and helm logs.

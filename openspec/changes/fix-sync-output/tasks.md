@@ -1,0 +1,2 @@
+- [x] Sort charts alphabetically in sync command <!-- id: 1 -->
+  - Modify `src/cli/commands/sync.rs` to sort `config.charts` vector by `name`.

@@ -1,0 +1,2 @@
+- [x] Update `src/cli/commands/deploy.rs` message
+- [x] Verify the new message output

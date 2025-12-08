@@ -1,0 +1,6 @@
+- [x] Remove `--only` flag from `src/cli/commands/mod.rs` <!-- id: 0 -->
+- [x] Add positional `charts` argument to `Args` structs in `src/cli/commands/mod.rs` <!-- id: 1 -->
+- [x] Update `src/cli/commands/check_updates.rs` to use positional args <!-- id: 2 -->
+- [x] Update `src/cli/commands/sync.rs` to use positional args <!-- id: 3 -->
+- [x] Update `src/cli/commands/deploy.rs` to use positional args <!-- id: 4 -->
+- [x] Verify `src/util/filter.rs` compatibility <!-- id: 5 -->

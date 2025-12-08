@@ -1,0 +1,36 @@
+# Tasks
+
+- [x] Implement `vesshelm add` command structure <!-- id: 0 -->
+- [x] Implement Artifact Hub client to fetch chart details <!-- id: 1 -->
+- [x] Implement interactive wizard for user input <!-- id: 2 -->
+- [x] Implement manual configuration file update to preserve comments <!-- id: 3 -->
+- [x] Implement coherent summary output using existing styles <!-- id: 4 -->
+    - [x] Align `[NEW]` tag with `[OK]`
+    - [x] Dim secondary info
+- [x] Implement confirmation and file writing <!-- id: 5 -->
+- [x] Implementation: Refactor `run` to support Source Selection <!-- id: 6 -->
+- [x] Implementation: Git Source Logic <!-- id: 7 -->
+    - [x] Prompt for Git Repo URL, Chart Path, Version
+    - [x] Derive Repo Name and Chart Name
+    - [x] Construct Repository entry with `type: git`
+    - [x] Construct Chart entry with `chart_path` and `version` (commit/tag)
+- [x] Implementation: OCI Source Logic <!-- id: 8 -->
+    - [x] Prompt for OCI URL and Version
+    - [x] Parse OCI URL to separate Repository URL (parent) and Chart Name
+    - [x] Construct Repository entry with `type: oci`
+    - [x] Construct Chart entry
+- [x] Refactoring: Split `add.rs` <!-- id: 10 -->
+    - [x] Create `src/cli/commands/add/mod.rs` (Main orchestration)
+    - [x] Create `src/cli/commands/add/source.rs` (Traits & Implementations)
+    - [x] Create `src/cli/commands/add/config_updater.rs` (File manipulation)
+- [x] Testing: Unit Tests <!-- id: 11 -->
+    - [x] Tests for `ArtifactHubSource` URL parsing/mock API
+    - [x] Tests for `GitSource` and `OciSource` logic
+    - [x] Tests for `ConfigUpdater` (smart append correctness)
+- [x] Verification: Manual Test of all 3 types <!-- id: 9 -->
+- [x] Refinement: Summary & URL Comments <!-- id: 12 -->
+    - [x] Refine summary format (aligned tags, version line)
+    - [x] Strict 9-space indentation for summary details
+    - [x] Store source URL as comment in `ChartDetails`
+    - [x] Populate `comment` field in `run` function
+    - [ ] Implement namespace suggestion from config

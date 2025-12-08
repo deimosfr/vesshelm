@@ -1,0 +1,27 @@
+# Tasks
+
+- [x] Define UX spec for icon spacing <!-- id: 0 -->
+    - [x] Create `openspec/changes/fix-icon-spacing/specs/ux/spec.md` <!-- id: 1 -->
+- [x] Update code to fix spacing <!-- id: 2 -->
+    - [x] Fix `src/cli/commands/deploy.rs`:
+        - [x] "🚀" to "🚀 "
+        - [x] "⏭" to "⏭ "
+        - [x] "📦" to "📦 "
+        - [x] "⚙️" to "⚙️ "
+        - [x] "🔎" to "🔎 "
+        - [x] "✅" to "✅ " (if present)
+        - [x] "❌" to "❌ "
+        - [x] "⚠️" to "⚠️ "
+    - [x] Fix `src/cli/commands/sync.rs`:
+        - [x] "✓" to "✓ " (CHECK emoji)
+        - [x] "✗" to "✗ " (CROSS emoji)
+    - [x] Fix `src/cli/commands/uninstall.rs`:
+        - [x] "⚠️" to "⚠️ "
+        - [x] "🚫" to "🚫 "
+        - [x] "🗑️" to "🗑️ "
+        - [x] "❌" to "❌ "
+        - [x] "✅" to "✅ "
+    - [x] Fix `src/cli/commands/validate.rs`:
+        - [x] Check for any icons.
+- [x] Verify changes <!-- id: 7 -->
+    - [x] Visual inspection of `cargo run -- <command>` output <!-- id: 8 -->

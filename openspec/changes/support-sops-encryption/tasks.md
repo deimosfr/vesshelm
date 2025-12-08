@@ -1,0 +1,7 @@
+- [x] Check for `sops` binary availability
+- [x] Implement `check_sops_encrypted(content: &str) -> bool` detection logic
+- [x] Implement `decrypt_file(path: &Path) -> Result<String>` wrapper around `sops` command
+- [x] Refactor `src/util/variables.rs` to use decryption logic in `load_variables`
+- [x] Refactor `src/util/variables.rs` to use decryption logic in `render_values_file`
+- [x] Add unit tests with mocked sops usage or sample sops file (if possible to test without keys, or just test the detection logic)
+- [x] Verify integration with a real sops-encrypted file

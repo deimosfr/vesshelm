@@ -1,0 +1,22 @@
+- [x] Scaffold `check-updates` command structure
+    - [x] Add `CheckUpdates` variant to `Commands` enum
+    - [x] Create `src/cli/commands/check_updates.rs` module
+- [x] Implement version checking logic
+    - [x] Add `semver` crate dependency
+    - [x] Implement `parse_version` with `v` prefix handling
+    - [x] Compare versions using SemVer (`latest > current`)
+    - [x] Fetch latest version from Helm repositories
+    - [x] Compare with current version in `vesshelm.yaml` (String comparison - to be improved)
+    - [x] Handle `local` and `git` charts (explicit ignore)
+- [x] Implement CLI output
+    - [x] Format output similar to `sync` command
+    - [x] distinct visual indicators for outdated vs up-to-date
+- [x] Implement `--apply` flag logic
+    - [x] Implement non-destructive update (regex/string replace) to preserve comments/order
+    - [x] Update `vesshelm.yaml` with new versions
+    - [x] Preserve formatting/comments if possible (or accept `serde_yaml` limitations)
+- [x] Implement `--only` flag logic
+    - [x] Filter charts to check/update
+- [x] Add tests
+    - [x] Unit tests for version comparison
+    - [x] Integration test for `check-updates` command

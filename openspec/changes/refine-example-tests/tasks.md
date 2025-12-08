@@ -1,0 +1,5 @@
+- [x] Rename `metrics-server` example to `simple-usage` in `tests/examples_test.rs` <!-- id: 0 -->
+- [x] Rename `external-dns` example to `complex-overrides` in `tests/examples_test.rs` <!-- id: 1 -->
+- [x] Update `variable-precedence` test to override `image.pullPolicy` instead of `extraArgs` <!-- id: 2 -->
+- [x] Verify tests pass and new directories are created <!-- id: 3 -->
+- [x] Remove old example directories (`examples/metrics-server`, `examples/external-dns`) <!-- id: 4 -->

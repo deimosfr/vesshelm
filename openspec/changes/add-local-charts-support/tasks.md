@@ -1,0 +1,11 @@
+## 1. Implementation
+- [x] 1.1 Modify `src/config.rs`:
+    - Change `repo_name` to `Option<String>`.
+    - Change `version` to `Option<String>`.
+    - Update `validate_config` to handle optional repo.
+- [x] 1.2 Modify `src/cli/commands/sync.rs`:
+    - Skip sync if `repo_name` is `None`.
+- [x] 1.3 Modify `src/cli/commands/deploy.rs`:
+    - Update path resolution logic for local charts.
+- [x] 1.4 Verification:
+    - Test with `vesshelm.yaml` containing a local chart definition.

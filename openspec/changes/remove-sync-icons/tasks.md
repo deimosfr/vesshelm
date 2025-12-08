@@ -1,0 +1,3 @@
+- [x] Remove `CHECK` and `CROSS` emoji usage in `src/cli/commands/sync.rs` <!-- id: 0 -->
+- [x] Implement aligned output formatting (padding for OK/SKIP/FAIL) <!-- id: 2 -->
+- [x] Verify `sync` output format is clean, aligned, and correct <!-- id: 1 -->

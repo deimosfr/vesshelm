@@ -1,0 +1,8 @@
+- [x] Update `src/cli/commands/delete.rs` path resolution.
+  - [x] Implement support for local charts using `chart_path`.
+  - [x] Implement "adaptive" logic for explicit `dest` (check `dest` vs `dest/name`).
+- [x] Update Summary output.
+  - [x] Check existence of determined path.
+  - [x] Display "Status: Present" or "Status: Missing".
+- [x] Add unit tests in `src/cli/commands/delete.rs` (or similar) to verify path resolution logic.
+- [x] Verify fix.

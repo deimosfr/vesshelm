@@ -1,0 +1,6 @@
+- [x] Update `format_error` to print error chain <!-- id: 1 -->
+  - Modify `src/util/error.rs`
+  - Iterate `err.chain()` and print causes if `ValidationErrors` is not present.
+- [x] Verify dependency error output <!-- id: 2 -->
+  - Create a test case or manual verification where a chart has a missing dependency.
+  - Ensure output contains both "Failed to resolve chart dependencies" AND "depends on unknown chart".

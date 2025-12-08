@@ -1,0 +1,5 @@
+- [x] Add `no_interpolation` field to `Chart` struct in `src/config.rs`
+- [x] Update `deploy_chart` in `src/cli/commands/deploy.rs` to respect `no_interpolation` flag
+- [x] Add unit test for `no_interpolation` configuration parsing
+- [x] Add integration test/verification ensuring interpolation is skipped when flag is set
+- [x] Update `README.md` configuration reference with `no_interpolation` option

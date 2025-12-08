@@ -1,0 +1,4 @@
+- [x] Update `Chart` struct in `src/config.rs` to include `no_deploy`.
+- [x] Update `deploy.rs` to check `no_deploy` and skip deployment if true.
+- [x] Verify `vesshelm deploy` skips charts marked with `no_deploy`.
+- [x] Verify `vesshelm sync` still syncs charts marked with `no_deploy`.

@@ -1,0 +1,9 @@
+- [x] Create `.github/workflows/ci.yml` for PR checks
+    - [x] Add compilation check
+    - [x] Add warning check
+    - [x] Add tests check
+    - [x] Add coverage check
+    - [x] Add audit check
+- [x] Create `.github/workflows/release.yml` for tag releases
+    - [x] Add version consistency check
+    - [x] Add GoReleaser step

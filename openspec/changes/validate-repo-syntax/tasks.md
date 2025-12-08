@@ -1,0 +1,3 @@
+- [x] Add requirement for config validation to check-updates spec <!-- id: 0 -->
+- [x] Implement robust error reporting for Config load <!-- id: 1 -->
+- [x] Verify with malformed yaml test case <!-- id: 2 -->

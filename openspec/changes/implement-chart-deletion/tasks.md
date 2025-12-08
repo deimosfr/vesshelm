@@ -1,0 +1,10 @@
+- [x] Implement `Lockfile::remove` in `src/lock.rs` to support removing chart entries.
+- [x] Create `src/cli/commands/delete.rs` with the core logic for the `delete` command.
+  - [x] Implement argument parsing (`DeleteArgs`).
+  - [x] Implement interactive chart selection if name is missing.
+  - [x] Implement dependency checking using `vesshelm::util::dag`.
+  - [x] Implement the summary display (Files, Config, Lock, Repo).
+  - [x] Implement confirmation prompt.
+  - [x] Implement the execution phase (File deletion, Config/Lock update, Repo cleanup).
+- [x] Register the new command in `src/cli/commands/mod.rs` and `src/cli/mod.rs`.
+- [x] Manual verification of the command flow with a test chart.

@@ -1,0 +1,8 @@
+- [x] Create `OciClient` <!-- id: 1 -->
+  - Implement `src/clients/oci.rs` with `get_tags` method.
+  - Implement basic OCI Token Auth flow (Challenge -> Token -> Request).
+- [x] Integrate OCI Client in `check-updates` <!-- id: 2 -->
+  - Modify `src/cli/commands/check_updates.rs` to use `OciClient` as fallback.
+  - Sort tags and pick latest semver.
+- [x] Verify with Test <!-- id: 3 -->
+  - Verified compilation and runtime safety (async refactor).

@@ -1,0 +1,70 @@
+
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build & Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.93.1
+          components: rustfmt, clippy
+      - name: Prek
+        uses: j178/prek-action@v1
+      - name: Check compilation (no issues)
+        run: cargo build
+      - name: Check compilation (no warnings)
+        run: RUSTFLAGS="-D warnings" cargo build
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: azure/setup-helm@v4.3.0
+      - name: Install helm-diff
+        run: helm plugin install --verify=false https://github.com/databus23/helm-diff
+      - name: Debug helm plugins
+        run: helm plugin list
+      - name: Run tests (no issues, no warnings)
+        run: RUSTFLAGS="-D warnings" cargo test
+
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+      - uses: azure/setup-helm@v4
+      - name: Install helm-diff
+        run: helm plugin install --verify=false https://github.com/databus23/helm-diff
+      - name: Install tarpaulin
+        run: cargo install cargo-tarpaulin
+      - name: Run coverage
+        run: cargo tarpaulin --engine llvm --fail-under 70 --out Xml
+
+  audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install cargo-audit
+        run: cargo install cargo-audit
+      - name: Run audit
+        run: cargo audit
+        continue-on-error: true
