@@ -7,7 +7,7 @@ use std::path::Path;
 
 pub struct SyncOptions {
     pub ignore_skip: bool,
-    pub only: Option<Vec<String>>,
+    pub charts: Option<Vec<String>>,
 }
 
 pub enum SyncEvent {
@@ -50,9 +50,9 @@ impl<H: HelmClient, G: GitClient> SyncEngine<H, G> {
     where
         F: Fn(SyncEvent),
     {
-        // Filter charts based on options.only
-        if let Some(only) = &options.only {
-            config.charts.retain(|chart| only.contains(&chart.name));
+        // Filter charts based on options.charts
+        if let Some(charts) = &options.charts {
+            config.charts.retain(|chart| charts.contains(&chart.name));
         }
 
         let mut stats = SyncStats {
@@ -313,7 +313,7 @@ mod tests {
         let mut lockfile = Lockfile::default();
         let options = SyncOptions {
             ignore_skip: false,
-            only: None,
+            charts: None,
         };
 
         let result = engine.sync(config, &mut lockfile, options, |_| {});
@@ -382,7 +382,7 @@ mod tests {
         let mut lockfile = Lockfile::default();
         let options = SyncOptions {
             ignore_skip: false,
-            only: None,
+            charts: None,
         };
 
         let result = engine.sync(config, &mut lockfile, options, |_| {});

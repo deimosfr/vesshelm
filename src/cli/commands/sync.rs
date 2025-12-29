@@ -12,19 +12,19 @@ use vesshelm::util::progress::ProgressTracker;
 pub async fn run(args: SyncArgs, no_progress: bool, config_path: &Path) -> Result<()> {
     let config = Config::load_from_path(config_path)?;
 
-    // Validate --only arguments
-    if let Some(only) = &args.only {
+    // Validate positional charts arguments
+    if let Some(charts) = &args.charts {
         let available_names: Vec<_> = config.charts.iter().map(|c| c.name.as_str()).collect();
-        vesshelm::util::filter::validate_only_args(&available_names, only)?;
+        vesshelm::util::filter::validate_chart_args(&available_names, charts)?;
     }
 
     // We need to count total charts first for the progress bar
     // This logic duplicates filter logic slightly but is needed for UI
-    let total_charts = if let Some(only) = &args.only {
+    let total_charts = if let Some(charts) = &args.charts {
         config
             .charts
             .iter()
-            .filter(|c| only.contains(&c.name))
+            .filter(|c| charts.contains(&c.name))
             .count() as u64
     } else {
         config.charts.len() as u64
@@ -46,7 +46,7 @@ pub async fn run(args: SyncArgs, no_progress: bool, config_path: &Path) -> Resul
 
     let options = SyncOptions {
         ignore_skip: args.ignore_skip,
-        only: args.only,
+        charts: args.charts,
     };
 
     let stats = engine.sync(config, &mut lockfile, options, |event| match event {

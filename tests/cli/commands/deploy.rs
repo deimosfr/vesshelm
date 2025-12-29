@@ -135,7 +135,6 @@ helm:
         .arg("deploy")
         .arg("--no-interactive")
         .arg("--no-progress")
-        .arg("--only")
         .arg("chart-b")
         .assert()
         .success()

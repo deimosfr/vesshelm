@@ -258,7 +258,6 @@ destinations:
     cmd.current_dir(&temp_dir)
         .env("PATH", &new_path)
         .arg("check-updates")
-        .arg("--only")
         .arg("chart-a")
         .assert()
         .success()

@@ -34,10 +34,8 @@ pub struct DeployArgs {
     #[clap(long)]
     pub dry_run: bool,
 
-    /// Only deploy the specified charts (comma-separated)
-    /// Only deploy the specified charts (comma-separated)
-    #[clap(long, value_delimiter = ',')]
-    pub only: Option<Vec<String>>,
+    /// Only deploy the specified charts
+    pub charts: Option<Vec<String>>,
 
     /// Skip interactive confirmation
     #[clap(long)]
@@ -54,9 +52,8 @@ pub struct DeployArgs {
 
 #[derive(Args, Clone, Debug)]
 pub struct SyncArgs {
-    /// Only sync the specified charts (comma-separated)
-    #[clap(long, value_delimiter = ',')]
-    pub only: Option<Vec<String>>,
+    /// Only sync the specified charts
+    pub charts: Option<Vec<String>>,
 
     /// Force sync (ignore skip conditions)
     #[clap(long)]
@@ -80,7 +77,6 @@ pub struct CheckUpdatesArgs {
     #[clap(long)]
     pub apply: bool,
 
-    /// Only check specified charts (comma-separated)
-    #[clap(long, value_delimiter = ',')]
-    pub only: Option<Vec<String>>,
+    /// Only check specified charts
+    pub charts: Option<Vec<String>>,
 }

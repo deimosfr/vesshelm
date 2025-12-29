@@ -27,9 +27,9 @@ pub async fn run(args: CheckUpdatesArgs, config_path: &std::path::Path) -> Resul
 
     // Iterate over charts
     for chart in &mut config.charts {
-        // Filter by --only arg
-        if let Some(only) = &args.only
-            && !only.contains(&chart.name)
+        // Filter by positional charts arg
+        if let Some(charts) = &args.charts
+            && !charts.contains(&chart.name)
         {
             continue;
         }

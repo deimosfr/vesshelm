@@ -35,11 +35,11 @@ pub async fn run(args: DeployArgs, no_progress: bool, config_path: &std::path::P
     let mut sorted_charts =
         dag::sort_charts(&config.charts).context("Failed to resolve chart dependencies")?;
 
-    // Filter charts based on args.only
-    if let Some(only) = &args.only {
+    // Filter charts based on args.charts
+    if let Some(charts) = &args.charts {
         let available_names: Vec<_> = sorted_charts.iter().map(|c| c.name.as_str()).collect();
-        filter::validate_only_args(&available_names, only)?;
-        sorted_charts.retain(|chart| only.contains(&chart.name));
+        filter::validate_chart_args(&available_names, charts)?;
+        sorted_charts.retain(|chart| charts.contains(&chart.name));
     }
 
     let total_charts = sorted_charts.len() as u64;
