@@ -1,0 +1,5 @@
+- [x] Add `clap_complete` dependency to `Cargo.toml` <!-- id: 0 -->
+- [x] Add `Completion` subcommand to `src/cli/commands/mod.rs` <!-- id: 1 -->
+- [x] Implement `src/cli/commands/completion.rs` <!-- id: 2 -->
+- [x] Wire up `Completion` command in `src/main.rs` <!-- id: 3 -->
+- [x] (Optional) Investigate/Implement partial dynamic support for charts <!-- id: 4 -->

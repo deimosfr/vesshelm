@@ -4,32 +4,9 @@ use clap::Parser;
 
 use crate::cli::commands::{self, Commands};
 
-#[derive(Parser)]
-#[command(name = "vesshelm")]
-#[command(version)]
-#[command(about = "A Helm chart management tool", long_about = None)]
-struct Cli {
-    #[command(subcommand)]
-    command: cli::commands::Commands,
-
-    /// Disable the persistent progress bar
-    #[arg(long, global = true)]
-    no_progress: bool,
-
-    /// Sets a custom config file
-    #[arg(
-        short,
-        long,
-        global = true,
-        value_name = "FILE",
-        default_value = "vesshelm.yaml"
-    )]
-    config: String,
-}
-
 #[tokio::main]
 async fn main() {
-    let cli = Cli::parse();
+    let cli = cli::Cli::parse();
     let config_path = std::path::Path::new(&cli.config);
 
     let result = match &cli.command {
@@ -50,6 +27,7 @@ async fn main() {
             println!("vesshelm {}", env!("CARGO_PKG_VERSION"));
             Ok(())
         }
+        Commands::Completion(args) => commands::completion::completion(args),
     };
 
     if let Err(e) = result {

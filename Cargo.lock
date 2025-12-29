@@ -211,6 +211,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "clap_complete"
+version = "4.5.63"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "90ef1fcbbf16b486489d0df91725ccc653c07115dd61f46363162535b74c6bc3"
+dependencies = [
+ "clap",
+]
+
+[[package]]
 name = "clap_derive"
 version = "4.5.49"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1793,11 +1802,12 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "vesshelm"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "anyhow",
  "assert_cmd",
  "clap",
+ "clap_complete",
  "colored",
  "console",
  "daggy",

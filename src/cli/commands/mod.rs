@@ -1,4 +1,5 @@
 pub mod check_updates;
+pub mod completion;
 pub mod deploy;
 pub mod graph;
 pub mod init;
@@ -8,7 +9,7 @@ pub mod validate;
 
 use clap::{Args, Subcommand};
 
-#[derive(Subcommand)]
+#[derive(Subcommand, Debug)]
 pub enum Commands {
     /// Initialize Vesshelm in the current directory
     Init,
@@ -26,6 +27,15 @@ pub enum Commands {
     CheckUpdates(CheckUpdatesArgs),
     /// Display the application version
     Version,
+    /// Generate shell completion scripts
+    Completion(CompletionArgs),
+}
+
+#[derive(Args, Clone, Debug)]
+pub struct CompletionArgs {
+    /// The shell to generate completion for
+    #[clap(value_enum)]
+    pub shell: clap_complete::Shell,
 }
 
 #[derive(Args, Clone, Debug)]
