@@ -33,7 +33,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - uses: azure/setup-helm@v4
+      - uses: azure/setup-helm@v4.3.0
       - name: Install helm-diff
         run: helm plugin install --verify=false https://github.com/databus23/helm-diff
       - name: Debug helm plugins
@@ -47,13 +47,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
       - uses: azure/setup-helm@v4
       - name: Install helm-diff
         run: helm plugin install --verify=false https://github.com/databus23/helm-diff
       - name: Install tarpaulin
         run: cargo install cargo-tarpaulin
       - name: Run coverage
-        run: cargo tarpaulin --fail-under 70 --out Xml
+        run: cargo tarpaulin --engine llvm --fail-under 70 --out Xml
 
   audit:
     name: Security Audit
