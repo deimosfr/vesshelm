@@ -87,6 +87,10 @@ pub struct CheckUpdatesArgs {
     #[clap(long)]
     pub apply: bool,
 
+    /// Update vesshelm.yaml and sync changes immediately
+    #[clap(long)]
+    pub apply_sync: bool,
+
     /// Only check specified charts
     pub charts: Option<Vec<String>>,
 }

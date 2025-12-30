@@ -21,7 +21,7 @@ async fn main() {
         Commands::Graph => commands::graph::run(config_path).await,
         Commands::Uninstall(args) => commands::uninstall::run(args.clone(), config_path).await,
         Commands::CheckUpdates(args) => {
-            commands::check_updates::run(args.clone(), config_path).await
+            commands::check_updates::run(args.clone(), cli.no_progress, config_path).await
         }
         Commands::Version => {
             println!("vesshelm {}", env!("CARGO_PKG_VERSION"));

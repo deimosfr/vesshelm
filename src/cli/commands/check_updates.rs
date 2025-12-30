@@ -8,9 +8,14 @@ use std::collections::HashMap;
 use std::process::Command;
 use tokio::fs;
 
-use super::CheckUpdatesArgs;
+use super::sync;
+use super::{CheckUpdatesArgs, SyncArgs};
 
-pub async fn run(args: CheckUpdatesArgs, config_path: &std::path::Path) -> Result<()> {
+pub async fn run(
+    args: CheckUpdatesArgs,
+    no_progress: bool,
+    config_path: &std::path::Path,
+) -> Result<()> {
     // Load configuration
     let mut config = Config::load_from_path(config_path)?;
 
@@ -106,7 +111,9 @@ pub async fn run(args: CheckUpdatesArgs, config_path: &std::path::Path) -> Resul
         }
     }
 
-    match (args.apply, updates_found) {
+    let should_apply = args.apply || args.apply_sync;
+
+    match (should_apply, updates_found) {
         (true, true) => {
             println!("\n{} Applying updates...", "📝".bold());
 
@@ -115,6 +122,15 @@ pub async fn run(args: CheckUpdatesArgs, config_path: &std::path::Path) -> Resul
             apply_updates_non_destructive(config_path, &updates_map).await?;
 
             println!("{} vesshelm.yaml updated.", "✅".green());
+
+            if args.apply_sync {
+                println!();
+                let sync_args = SyncArgs {
+                    charts: args.charts,
+                    ignore_skip: false,
+                };
+                sync::run(sync_args, no_progress, config_path).await?;
+            }
         }
         (false, true) => {
             println!("\nRun with {} to apply changes.", "--apply".cyan());

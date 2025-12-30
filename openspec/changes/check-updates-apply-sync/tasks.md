@@ -1,0 +1,5 @@
+- [ ] Add `apply_sync` field to `CheckUpdatesArgs` struct in `src/cli/commands/mod.rs` <!-- id: 0 -->
+- [ ] Update `src/cli/commands/check_updates.rs` to handle `apply_sync` logic <!-- id: 1 -->
+  - [ ] If `apply_sync` is true, treat it effectively as `apply` = true for the update logic.
+  - [ ] If actual updates were applied, trigger the sync process.
+- [ ] Refactor `sync::run` if necessary to be callable easily from `check_updates` (it is `pub async fn`, so should be fine, just need to construct `SyncArgs`).
