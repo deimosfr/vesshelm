@@ -1,3 +1,4 @@
+pub mod add;
 pub mod check_updates;
 pub mod completion;
 pub mod deploy;
@@ -29,6 +30,8 @@ pub enum Commands {
     Version,
     /// Generate shell completion scripts
     Completion(CompletionArgs),
+    /// Add a new chart to the configuration
+    Add,
 }
 
 #[derive(Args, Clone, Debug)]

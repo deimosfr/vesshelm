@@ -1,3 +1,4 @@
+pub mod artifacthub;
 pub mod git;
 pub mod helm;
 

@@ -1,6 +1,6 @@
 [package]
 name = "vesshelm"
-version = "1.1.0"
+version = "1.2.0"
 edition = "2024"
 license = "GPL-3.0-or-later"
 
@@ -25,7 +25,8 @@ colored = "3.0.0"
 dialoguer = "0.12.0"
 semver = "1.0.27"
 regex = "1.12.2"
-clap_complete = "4.5.63"
+clap_complete = "4.5.64"
+reqwest = { version = "0.13.1", features = ["json", "blocking"] }
 
 [dev-dependencies]
 assert_cmd = "2.1.1"

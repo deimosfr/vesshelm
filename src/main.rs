@@ -28,6 +28,7 @@ async fn main() {
             Ok(())
         }
         Commands::Completion(args) => commands::completion::completion(args),
+        Commands::Add => commands::add::run(config_path).await,
     };
 
     if let Err(e) = result {
