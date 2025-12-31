@@ -18,7 +18,7 @@ pub struct ConfigUpdater;
 impl ConfigUpdater {
     // Existing functionality from add command
     pub fn append_repo_chart(config_path: &Path, repo: Option<Repository>, chart: ChartConfig) -> Result<()> { ... }
-    
+
     // Internal helper extracted from add/config_updater.rs
     fn add_repository(content: &mut String, r: &Repository) { ... }
     fn add_chart(content: &mut String, chart: &ChartConfig) { ... }
@@ -28,7 +28,7 @@ impl ConfigUpdater {
     pub fn update_chart_version(config_path: &Path, chart_name: &str, new_version: &str) -> Result<()> {
          // Read, replace, write
     }
-    
+
     // Low-level helper for in-memory string manipulation (for testing)
     pub fn replace_chart_version_in_text(content: &mut String, chart_name: &str, new_version: &str) -> Result<()> {
         // Logic from check_updates.rs::find_and_replace_version

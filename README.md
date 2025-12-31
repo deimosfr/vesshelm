@@ -16,6 +16,9 @@ Vesshelm is a modern, reliable, and user-friendly tool for managing Helm charts,
 - **Life-Cycle Management**:
   - **Check Updates**: Easily identify and apply newer chart versions.
   - **Uninstall**: Clean up releases with a single command.
+- **Ease of Use**:
+  - **Interactive**: `add` command to easily onboard new charts from ArtifactHub, Git, or OCI.
+  - **Autocompletion**: Comprehensive shell completion for commands and chart names.
 - **User Interface**: Beautiful interactive CLI with progress bars for syncing and deployment.
 - **Configuration**: Strongly typed `vesshelm.yaml` configuration with validation.
 
@@ -72,7 +75,19 @@ Sets up Vesshelm in the current directory:
 vesshelm init
 ```
 
-### 2. Sync Charts
+### 2. Add Chart
+
+Interactively add a new chart to your configuration:
+- Supports Artifact Hub, Git repositories, and OCI registries.
+- Automatically detects repository URL and chart version.
+- Checks for duplicate charts.
+- Updates `vesshelm.yaml` and offers to sync immediately.
+
+```bash
+vesshelm add
+```
+
+### 3. Sync Charts
 
 Downloads charts to your local destinations to ensure reproducible deployments:
 - Fetches charts from Helm repositories, Git repositories, or OCI registries.
@@ -116,7 +131,7 @@ Or specific charts:
 vesshelm sync --only my-chart
 ```
 
-### 3. Deploy
+### 4. Deploy
 
 Orchestrates the deployment of your charts to Kubernetes:
 - Resolves chart dependencies to determine the correct deployment order.
@@ -156,7 +171,7 @@ Summary:
   Ignored:  0
 ```
 
-### 4. Visualize
+### 5. Visualize
 
 Generates a visual representation of your chart dependencies:
 - Displays a dependency tree showing how charts relate to each other.
@@ -188,7 +203,7 @@ Deployment Graph
       └─ mariadb-config
 ```
 
-### 5. Check Updates
+### 6. Check Updates
 
 Scans your repositories (Helm/Git) for newer chart versions:
 - Compares your local version against the upstream repository.
@@ -204,6 +219,9 @@ vesshelm check-updates --only my-chart
 
 # Update new versions to vesshelm.yaml
 vesshelm check-updates --apply
+
+# Update and sync immediately
+vesshelm check-updates --apply-sync
 ```
 
 Output example:
@@ -239,7 +257,7 @@ checking external-dns... Up to date
 Run with --apply to apply changes.
 ```
 
-### 6. Uninstall
+### 7. Uninstall
 
 Safely removes chart releases from your cluster:
 - Checks if other charts depend on the one you are uninstalling.
@@ -254,7 +272,7 @@ vesshelm uninstall my-chart
 vesshelm uninstall my-chart --no-interactive
 ```
 
-### 7. Validate
+### 8. Validate
 
 Ensures your configuration is correct before running operations:
 - validates YAML syntax and structure.
@@ -265,6 +283,21 @@ Ensures your configuration is correct before running operations:
 ```bash
 $ vesshelm validate
 Configuration is valid
+```
+
+### 9. Autocompletion
+
+Generate shell completion scripts for your shell (bash, zsh, fish, etc.).
+
+```bash
+# For Zsh
+source <(vesshelm completion zsh)
+
+# For Fish
+vesshelm completion fish | source
+
+# For Bash
+source <(vesshelm completion bash)
 ```
 
 ## Configuration (`vesshelm.yaml`)

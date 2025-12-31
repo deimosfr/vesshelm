@@ -64,6 +64,23 @@ fn derive_oci(url: &str) -> (String, String, String) {
     (repo_name, repo_url, chart_name_derived)
 }
 
+fn map_package_to_details(package: Package) -> ChartDetails {
+    let repo_type = if package.repository.url.starts_with("oci://") {
+        RepoType::Oci
+    } else {
+        RepoType::Helm
+    };
+
+    ChartDetails {
+        repo_name: package.name.clone(),
+        repo_url: package.repository.url,
+        chart_name: package.name,
+        version: Some(package.version),
+        chart_path: None,
+        repo_type,
+    }
+}
+
 #[async_trait::async_trait]
 impl ChartSource for ArtifactHubSource {
     async fn prompt_details(&self) -> Result<ChartDetails> {
@@ -86,14 +103,7 @@ impl ChartSource for ArtifactHubSource {
             package.name, package.version, package.repository.url
         );
 
-        Ok(ChartDetails {
-            repo_name: package.name.clone(),
-            repo_url: package.repository.url,
-            chart_name: package.name,
-            version: Some(package.version),
-            chart_path: None,
-            repo_type: RepoType::Helm,
-        })
+        Ok(map_package_to_details(package))
     }
 }
 
@@ -160,6 +170,8 @@ pub fn get_source(selection: usize) -> Option<Box<dyn ChartSource>> {
 
 #[cfg(test)]
 mod tests {
+    use vesshelm::clients::artifacthub::Repository;
+
     use super::*;
 
     #[test]
@@ -183,6 +195,41 @@ mod tests {
         let (repo, chart) = derive_git(url, path);
         assert_eq!(repo, "csi-driver-smb");
         assert_eq!(chart, "csi-driver-smb");
+    }
+
+    #[test]
+    fn test_map_package_helm() {
+        let pkg = Package {
+            name: "chart-helm".to_string(),
+            version: "1.2.3".to_string(),
+            repository: Repository {
+                name: "repo".to_string(),
+                url: "https://charts.example.com".to_string(),
+            },
+        };
+
+        let details = map_package_to_details(pkg);
+        assert_eq!(details.repo_type, RepoType::Helm);
+        assert_eq!(details.repo_url, "https://charts.example.com");
+    }
+
+    #[test]
+    fn test_map_package_oci() {
+        let pkg = Package {
+            name: "chart-oci".to_string(),
+            version: "0.0.1".to_string(),
+            repository: Repository {
+                name: "repo".to_string(),
+                url: "oci://registry.example.com/repo/chart-oci".to_string(),
+            },
+        };
+
+        let details = map_package_to_details(pkg);
+        assert_eq!(details.repo_type, RepoType::Oci);
+        assert_eq!(
+            details.repo_url,
+            "oci://registry.example.com/repo/chart-oci"
+        );
     }
 
     #[test]
