@@ -37,7 +37,7 @@ destinations:
 helm:
   args: "upgrade --install {{ name }} {{ destination }}/{{ name }} -n {{ namespace }} --wait --rollback-on-failure --create-namespace"
   diff_enabled: true
-  diff_args: "diff upgrade --allow-unreleased {{ name }} {{ destination }} -n {{ namespace }}"
+  diff_args: "diff upgrade --suppress-secrets --allow-unreleased {{ name }} {{ destination }} -n {{ namespace }}"
 
 repositories:
   - name: stable

@@ -141,10 +141,10 @@ Output example:
 $ vesshelm deploy --dry-run
 🚀  Starting deployment...
 📦  Deploying chart mariadb-operator-crds
-🔎  helm diff upgrade --allow-unreleased mariadb-operator-crds ./charts/mariadb-operator-crds -n mariadb-operator
+🔎  helm diff upgrade --suppress-secrets --allow-unreleased mariadb-operator-crds ./charts/mariadb-operator-crds -n mariadb-operator
 ⏭  No changes for mariadb-operator-crds. Skipping.
 📦  Deploying chart custom-priority-classes
-🔎  helm diff upgrade --allow-unreleased custom-priority-classes charts/custom-priority-classes -n kube-system
+🔎  helm diff upgrade --suppress-secrets --allow-unreleased custom-priority-classes charts/custom-priority-classes -n kube-system
 ⏭  No changes for custom-priority-classes. Skipping.
 
   [00:00:08] [████████████████████████████████████████] 3/3 (100%) Deployment ended
@@ -297,7 +297,7 @@ helm:
   # Enable diff before deploy
   diff_enabled: true
   # Optional custom diff command
-  diff_args: "diff upgrade --allow-unreleased {{ name }} {{ destination }} -n {{ namespace }}"
+  diff_args: "diff upgrade --suppress-secrets --allow-unreleased {{ name }} {{ destination }} -n {{ namespace }}"
 
 charts:
   # 1. Standard Helm Repo Chart

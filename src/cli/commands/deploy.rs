@@ -202,7 +202,7 @@ async fn deploy_chart(
     if dry_run || global_helm_config.diff_enabled {
         // Use default if None
         let diff_template = global_helm_config.diff_args.as_deref().unwrap_or(
-            "diff upgrade --allow-unreleased {{ name }} {{ destination }} -n {{ namespace }}",
+            "diff upgrade --suppress-secrets --allow-unreleased {{ name }} {{ destination }} -n {{ namespace }}",
         );
 
         let mut final_diff_args = interpolate_variables(diff_template, chart, &dest_path)?;
