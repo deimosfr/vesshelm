@@ -8,3 +8,23 @@
     - [x] Align `[NEW]` tag with `[OK]`
     - [x] Dim secondary info
 - [x] Implement confirmation and file writing <!-- id: 5 -->
+- [x] Implementation: Refactor `run` to support Source Selection <!-- id: 6 -->
+- [x] Implementation: Git Source Logic <!-- id: 7 -->
+    - [x] Prompt for Git Repo URL, Chart Path, Version
+    - [x] Derive Repo Name and Chart Name
+    - [x] Construct Repository entry with `type: git`
+    - [x] Construct Chart entry with `chart_path` and `version` (commit/tag)
+- [x] Implementation: OCI Source Logic <!-- id: 8 -->
+    - [x] Prompt for OCI URL and Version
+    - [x] Parse OCI URL to separate Repository URL (parent) and Chart Name
+    - [x] Construct Repository entry with `type: oci`
+    - [x] Construct Chart entry
+- [x] Refactoring: Split `add.rs` <!-- id: 10 -->
+    - [x] Create `src/cli/commands/add/mod.rs` (Main orchestration)
+    - [x] Create `src/cli/commands/add/source.rs` (Traits & Implementations)
+    - [x] Create `src/cli/commands/add/config_updater.rs` (File manipulation)
+- [x] Testing: Unit Tests <!-- id: 11 -->
+    - [x] Tests for `ArtifactHubSource` URL parsing/mock API
+    - [x] Tests for `GitSource` and `OciSource` logic
+    - [x] Tests for `ConfigUpdater` (smart append correctness)
+- [x] Verification: Manual Test of all 3 types <!-- id: 9 -->

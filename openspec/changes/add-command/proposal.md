@@ -10,10 +10,26 @@ Currently, users must manually edit `vesshelm.yaml` to add charts and repositori
 
 ## Solution
 The `add` command will:
-1.  Prompt for an Artifact Hub URL.
-2.  Fetch chart details (repository URL, chart name, version) from Artifact Hub.
-3.  Check if the repository exists in `vesshelm.yaml` and add it if missing.
-4.  Prompt for configuration details (alias, namespace).
-5.  Generate the chart configuration block.
-6.  Preview the changes and urge the user to confirm.
-7.  Update `vesshelm.yaml`.
+1.  Prompt the user to select the source type: Artifact Hub (Default), Git, or OCI.
+2.  **Artifact Hub**:
+    *   Prompt for URL.
+    *   Fetch chart details.
+3.  **Git**:
+    *   Prompt for Git Repository URL.
+    *   Prompt for Chart Path within the repo.
+    *   Prompt for Version (commit/tag/branch).
+4.  **OCI**:
+    *   Prompt for OCI URL (e.g., `oci://...`).
+    *   Prompt for Version.
+5.  Check if the repository exists in `vesshelm.yaml` and add it if missing (detecting type automatically).
+6.  Prompt for configuration details (alias, namespace).
+7.  Generate the chart configuration block.
+8.  Preview the changes and urge the user to confirm.
+9.  Update `vesshelm.yaml`.
+
+## Code Quality
+To ensure maintainability and robustness:
+1.  **Refactoring**: Split `src/cli/commands/add.rs` into smaller, testable modules (e.g., `source` module for different providers, `config_updater` for file manipulations).
+2.  **Testing**: Add unit tests for:
+    *   URL parsing (Artifact Hub, Git, OCI).
+    *   Config update logic (mocking file I/O or using temp files).

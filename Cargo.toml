@@ -27,6 +27,7 @@ semver = "1.0.27"
 regex = "1.12.2"
 clap_complete = "4.5.64"
 reqwest = { version = "0.13.1", features = ["json", "blocking"] }
+async-trait = "0.1.89"
 
 [dev-dependencies]
 assert_cmd = "2.1.1"

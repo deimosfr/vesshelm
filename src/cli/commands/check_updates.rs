@@ -4,9 +4,7 @@ use console::style;
 use semver::Version;
 use vesshelm::config::{Config, RepoType};
 
-use std::collections::HashMap;
 use std::process::Command;
-use tokio::fs;
 
 use super::sync;
 use super::{CheckUpdatesArgs, SyncArgs};
@@ -113,13 +111,29 @@ pub async fn run(
 
     let should_apply = args.apply || args.apply_sync;
 
+    use vesshelm::util::config_updater::ConfigUpdater;
+
+    // ... existing imports ...
+
     match (should_apply, updates_found) {
         (true, true) => {
             println!("\n{} Applying updates...", "📝".bold());
 
-            // Apply updates non-destructively
-            let updates_map: HashMap<String, String> = charts_to_update.into_iter().collect();
-            apply_updates_non_destructive(config_path, &updates_map).await?;
+            // Apply updates
+            for (chart_name, new_version) in &charts_to_update {
+                if let Err(e) =
+                    ConfigUpdater::update_chart_version(config_path, chart_name, new_version)
+                {
+                    println!(
+                        "{} Failed to update {}: {}",
+                        "Warning".yellow(),
+                        chart_name,
+                        e
+                    );
+                } else {
+                    println!("Updated {} to {}", chart_name.bold(), new_version.green());
+                }
+            }
 
             println!("{} vesshelm.yaml updated.", "✅".green());
 
@@ -141,99 +155,6 @@ pub async fn run(
     }
 
     Ok(())
-}
-
-async fn apply_updates_non_destructive(
-    config_path: &std::path::Path,
-    updates: &HashMap<String, String>,
-) -> Result<()> {
-    // Read the entire file
-    let content = fs::read_to_string(config_path)
-        .await
-        .context("Failed to read config file")?;
-
-    let mut new_content = content.clone();
-
-    for (chart_name, new_version) in updates {
-        if let Err(e) = find_and_replace_version(&mut new_content, chart_name, new_version) {
-            println!(
-                "{} Failed to update {}: {}",
-                "Warning".yellow(),
-                chart_name,
-                e
-            );
-        } else {
-            println!("Updated {} to {}", chart_name.bold(), new_version.green());
-        }
-    }
-
-    // Write back only if changes were made (though we iterate updates so strictly yes)
-    if new_content != content {
-        fs::write(config_path, new_content)
-            .await
-            .context("Failed to write updated config")?;
-    }
-
-    Ok(())
-}
-
-fn find_and_replace_version(
-    content: &mut String,
-    chart_name: &str,
-    new_version: &str,
-) -> Result<()> {
-    // 1. Find the line that starts the chart block: `name: <chart_name>`
-    let name_regex = regex::Regex::new(&format!(
-        r"(?m)^(\s*-\s*|\s*)name:\s*{}\s*$",
-        regex::escape(chart_name)
-    ))?;
-
-    let mat = name_regex
-        .find(content)
-        .ok_or_else(|| anyhow!("Chart {} not found", chart_name))?;
-    let start_idx = mat.end(); // We start search after the name line
-
-    // 2. Scan lines after the name to find `version:`
-    let version_regex = regex::Regex::new(r"(?m)^(\s*)version:\s*([^\s]+)")?;
-
-    let suffix = &content[start_idx..];
-
-    // Find first version match
-    if let Some(v_cap) = version_regex.captures(suffix) {
-        // v_cap(0) is the whole line/match "  version: 1.2.3"
-        // Check if there is a "danger marker" before this match.
-        let match_start_in_suffix = v_cap
-            .get(0)
-            .ok_or_else(|| anyhow!("Failed to get capture group 0"))?
-            .start();
-        let pre_match_text = &suffix[..match_start_in_suffix];
-
-        // Check if pre_match_text contains a new list item marker `- name:` or `- ` at base level.
-        let danger_regex = regex::Regex::new(r"(?m)^\s*(-\s*)?name:")?;
-        if danger_regex.is_match(pre_match_text) {
-            return Err(anyhow!(
-                "Found version field but it belongs to another chart (crossed boundary)"
-            ));
-        }
-
-        // Safe to replace
-        let version_val_match = v_cap
-            .get(2) // Group 2 is value
-            .ok_or_else(|| anyhow!("Failed to get version value capture group"))?;
-        let range = version_val_match.range();
-
-        // Calculate absolute range in original content
-        let abs_start = start_idx + range.start;
-        let abs_end = start_idx + range.end;
-
-        content.replace_range(abs_start..abs_end, new_version);
-        return Ok(());
-    }
-
-    Err(anyhow!(
-        "Could not find version field for chart {}",
-        chart_name
-    ))
 }
 
 fn update_helm_repos() -> Result<()> {
@@ -315,49 +236,5 @@ mod tests {
         let v4 = parse_version("v1.19.2").unwrap();
         assert_eq!(v3, v4);
         assert!(v3 <= v4); // Should NOT suggest update
-    }
-
-    #[test]
-    fn test_verify_regex_replacement() {
-        let mut yaml_content = r#"
-charts:
-  - name: chart1
-    repo_name: repo1
-    version: 1.0.0 # comment
-    other: field
-  - name: chart2
-    version: 2.0.0
-    # comment line
-    some: value
-"#
-        .to_string();
-
-        let chart_name = "chart1";
-        let new_version = "1.0.1";
-
-        find_and_replace_version(&mut yaml_content, chart_name, new_version)
-            .expect("replacement failed");
-
-        // Verify changes
-        assert!(yaml_content.contains("version: 1.0.1 # comment"));
-        // Verify other chart unchanged
-        assert!(yaml_content.contains("version: 2.0.0"));
-        // Verify structure preserved
-        assert!(yaml_content.contains("other: field"));
-
-        // Test tricky formatting
-        let mut yaml_content_2 = r#"
-charts:
-  - name: my-chart
-    version: v1.2.3
-  - name: other
-    version: 1.0.0
-"#
-        .to_string();
-
-        find_and_replace_version(&mut yaml_content_2, "my-chart", "v1.2.4")
-            .expect("replacement failed");
-        assert!(yaml_content_2.contains("version: v1.2.4"));
-        assert!(!yaml_content_2.contains("version: v1.2.3"));
     }
 }

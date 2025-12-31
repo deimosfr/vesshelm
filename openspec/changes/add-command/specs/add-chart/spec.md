@@ -11,15 +11,39 @@ The `add` command MUST provide an interactive wizard to collect chart informatio
 Given the user runs `vesshelm add`
 Then the system prompts for an Artifact Hub URL
 
+### Requirement: Source Selection
+The `add` command MUST allow the user to choose the source type.
+
+#### Scenario: Select Source
+Given the user runs `vesshelm add`
+Then the system prompts "Select source type"
+And the options are "Artifact Hub (default)", "Git", "OCI"
+
 ### Requirement: Artifact Hub Parsing
-The `add` command MUST parse the provided Artifact Hub URL to extract chart details.
+The `add` command MUST parse the provided Artifact Hub URL to extract chart details (if Source is Artifact Hub).
 
 #### Scenario: Valid URL provided
-Given the user enters `https://artifacthub.io/packages/helm/dnsmasq-k8s/dnsmasq-k8s`
-Then the system detects:
-  - Repository URL: `https://deimosfr.github.io/dnsmasq-k8s/`
-  - Chart Name: `dnsmasq-k8s`
-  - Version: `1.4.1`
+[As before...]
+
+### Requirement: Git Configuration
+The `add` command MUST support adding charts from Git repositories.
+
+#### Scenario: Git Source Flow
+Given the user selects "Git" source
+Then the system prompts for "Git Repository URL"
+And the system prompts for "Chart Path"
+And the system prompts for "Version" (commit/tag/branch)
+And the system proposes a new repository with `type: git`
+
+### Requirement: OCI Configuration
+The `add` command MUST support adding charts from OCI registries.
+
+#### Scenario: OCI Source Flow
+Given the user selects "OCI" source
+Then the system prompts for "OCI URL" (e.g. `oci://registry/repo/chart`)
+And the system prompts for "Version"
+And the system parses the URL to separate Repository URL (`oci://registry/repo`) and Chart Name (`chart`)
+And the system proposes a new repository with `type: oci`
 
 ### Requirement: Repository Management
 The `add` command MUST check if the repository is already configured.
@@ -56,7 +80,14 @@ Given the command lists added items
 Then the status tag `[NEW]` is displayed
 And the status tag is aligned with `[OK]` tags from other commands (e.g. using similar padding)
 And the repository/chart name follows the tag
-And secondary information in parentheses (e.g. version, url) is displayed in **dimmed** color (grey)
+### Requirement: Code Quality
+The `add` command implementation MUST be modular and testable.
+
+#### Scenario: Unit Tests
+Given the `add` command logic is refactored
+Then unit tests exist for `ChartSource` implementations (parsing logic)
+And unit tests exist for `ConfigUpdater` (file modification logic)
+
 
 ### Requirement: Minimal Config Update
 The `add` command MUST update `vesshelm.yaml` without modifying existing content (comments, ordering).
