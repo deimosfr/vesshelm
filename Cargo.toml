@@ -26,7 +26,7 @@ dialoguer = { version = "0.12.0", features = ["fuzzy-select"] }
 semver = "1.0.27"
 regex = "1.12.2"
 clap_complete = "4.5.64"
-reqwest = { version = "0.13.1", features = ["json", "blocking"] }
+reqwest = { version = "0.13.1", default-features = false, features = ["native-tls-vendored", "json", "blocking", "http2", "charset"] }
 async-trait = "0.1.89"
 
 [dev-dependencies]
