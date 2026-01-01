@@ -1,30 +1,31 @@
+use crate::config::{Config, Repository};
+use crate::util::config_updater::{ChartConfig, ConfigUpdater};
+use crate::util::interaction::UserInteraction;
 use anyhow::{Context, Result};
 use console::style;
-use dialoguer::{Confirm, Input, Select, theme::ColorfulTheme};
+use std::collections::HashSet;
 use std::path::Path;
-use vesshelm::config::{Config, Repository};
 
 mod source;
-
 use source::get_source;
-use vesshelm::util::config_updater::{ChartConfig, ConfigUpdater};
 
-pub async fn run(config_path: &Path) -> Result<()> {
+pub async fn run(config_path: &Path, interaction: &(impl UserInteraction + Sync)) -> Result<()> {
     println!("{} Adding chart...", style("==>").bold().green());
 
     // 1. Source Selection
-    let sources = vec!["Artifact Hub", "Git", "OCI"];
-    let selection = Select::with_theme(&ColorfulTheme::default())
-        .with_prompt("Select source type")
-        .default(0)
-        .items(&sources)
-        .interact()
+    let sources = vec![
+        "Artifact Hub".to_string(),
+        "Git".to_string(),
+        "OCI".to_string(),
+    ];
+    let selection = interaction
+        .select("Select source type", &sources, 0)
         .context("Failed to read source selection")?;
 
     let source = get_source(selection).context("Invalid source selection")?;
 
     // 2. Get Details from Source
-    let details = source.prompt_details().await?;
+    let details = source.prompt_details(interaction).await?;
 
     // 3. Configuration Logic
     let config = Config::load_from_path(config_path)?;
@@ -43,17 +44,15 @@ pub async fn run(config_path: &Path) -> Result<()> {
         println!("Repository {} not found in config.", repo_url);
         let default_name = details.repo_name.clone();
 
-        let name: String = Input::with_theme(&ColorfulTheme::default())
-            .with_prompt("New Repository Name")
-            .default(default_name)
-            .validate_with(|input: &String| -> Result<(), &str> {
-                if config.repositories.iter().any(|r| r.name == *input) {
-                    Err("Repository name already exists")
-                } else {
-                    Ok(())
-                }
-            })
-            .interact_text()?;
+        // Validation Loop for Repo Name
+        let name = loop {
+            let n = interaction.input("New Repository Name", Some(&default_name))?;
+            if config.repositories.iter().any(|r| r.name == n) {
+                println!("Repository name already exists. Please choose another.");
+                continue;
+            }
+            break n;
+        };
 
         (
             name.clone(),
@@ -67,40 +66,28 @@ pub async fn run(config_path: &Path) -> Result<()> {
 
     // Chart Details
     let default_chart_name = details.chart_name.clone();
-    let chart_name: String = Input::with_theme(&ColorfulTheme::default())
-        .with_prompt("Chart Name")
-        .default(default_chart_name)
-        .validate_with(|_input: &String| -> Result<(), &str> { Ok(()) })
-        .interact_text()?;
+    let chart_name = interaction.input("Chart Name", Some(&default_chart_name))?;
 
     // Namespace Selection
     let mut namespaces: Vec<String> = config
         .charts
         .iter()
         .map(|c| c.namespace.clone())
-        .collect::<std::collections::HashSet<_>>()
+        .collect::<HashSet<_>>()
         .into_iter()
         .collect();
     namespaces.sort();
 
     let namespace = if namespaces.is_empty() {
-        Input::with_theme(&ColorfulTheme::default())
-            .with_prompt("Namespace")
-            .interact_text()?
+        interaction.input("Namespace", None)?
     } else {
         let mut selection_items = namespaces.clone();
         selection_items.push("Create new...".to_string());
 
-        let selection = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt("Select Namespace")
-            .items(&selection_items)
-            .default(0)
-            .interact()?;
+        let selection = interaction.select("Select Namespace", &selection_items, 0)?;
 
         if selection == namespaces.len() {
-            Input::with_theme(&ColorfulTheme::default())
-                .with_prompt("New Namespace")
-                .interact_text()?
+            interaction.input("New Namespace", None)?
         } else {
             namespaces[selection].clone()
         }
@@ -118,11 +105,7 @@ pub async fn run(config_path: &Path) -> Result<()> {
             chart_name,
             namespace
         );
-        if !Confirm::with_theme(&ColorfulTheme::default())
-            .with_prompt("Continue anyway (will duplicate)?")
-            .default(false)
-            .interact()?
-        {
+        if !interaction.confirm("Continue anyway (will duplicate)?", false)? {
             return Ok(());
         }
     }
@@ -153,11 +136,7 @@ pub async fn run(config_path: &Path) -> Result<()> {
     println!("         Version: {}", version_display);
     println!("         Namespace: {}", namespace);
 
-    if Confirm::with_theme(&ColorfulTheme::default())
-        .with_prompt("Add to config?")
-        .default(true)
-        .interact()?
-    {
+    if interaction.confirm("Add to config?", true)? {
         let chart_config = ChartConfig {
             name: chart_name.clone(),
             repo_name: repo_name_to_use,
@@ -170,11 +149,7 @@ pub async fn run(config_path: &Path) -> Result<()> {
         ConfigUpdater::update(config_path, new_repo, chart_config)?;
         println!("vesshelm.yaml updated.");
 
-        if Confirm::with_theme(&ColorfulTheme::default())
-            .with_prompt("Run sync now?")
-            .default(true)
-            .interact()?
-        {
+        if interaction.confirm("Run sync now?", true)? {
             use crate::cli::commands::SyncArgs;
             let args = SyncArgs {
                 charts: Some(vec![chart_name]),

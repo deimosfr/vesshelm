@@ -1,10 +1,10 @@
+use crate::config::Config;
 use anyhow::{Context, Result};
 use colored::*;
 use console::style;
 use std::fs;
 use std::path::Path;
 use validator::Validate; // Needed for trait method
-use vesshelm::config::Config;
 
 pub async fn run(config_path: &Path) -> Result<()> {
     println!("{} Validating configuration", style("==>").bold().green());

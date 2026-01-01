@@ -1,9 +1,9 @@
 use anyhow::{Context, Result, anyhow};
 // use colored::*; // Unused
+use crate::clients::{HelmClient, helm::RealHelmClient};
+use crate::config::Config;
 use console::style;
 use dialoguer::Confirm;
-use vesshelm::clients::{HelmClient, helm::RealHelmClient};
-use vesshelm::config::Config;
 
 use super::UninstallArgs;
 
@@ -22,7 +22,7 @@ pub async fn run(args: UninstallArgs, config_path: &std::path::Path) -> Result<(
         .ok_or_else(|| anyhow!("Chart '{}' not found in vesshelm.yaml", name))?;
 
     // Check for dependents
-    let dependents = vesshelm::util::dag::get_dependents(&config.charts, &chart.name)
+    let dependents = crate::util::dag::get_dependents(&config.charts, &chart.name)
         .context("Failed to check chart dependencies")?;
 
     if !dependents.is_empty() {

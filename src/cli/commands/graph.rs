@@ -1,8 +1,8 @@
+use crate::config::Config;
 use anyhow::Result;
 use console::style;
 use ptree::{TreeBuilder, print_tree};
 use std::collections::HashMap;
-use vesshelm::config::Config;
 
 pub async fn run(config_path: &std::path::Path) -> Result<()> {
     println!(
@@ -14,7 +14,7 @@ pub async fn run(config_path: &std::path::Path) -> Result<()> {
     let config = Config::load_from_path(config_path)?;
 
     let mut dependents_map: HashMap<String, Vec<String>> = HashMap::new();
-    let mut all_charts: HashMap<String, &vesshelm::config::Chart> = HashMap::new();
+    let mut all_charts: HashMap<String, &crate::config::Chart> = HashMap::new();
     let mut has_dependencies: HashMap<String, bool> = HashMap::new(); // Tracks if a chart HAS dependencies (is a child)
 
     for chart in &config.charts {

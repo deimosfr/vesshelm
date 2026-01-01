@@ -1,8 +1,8 @@
+use crate::clients::helm::{HelmClient, RealHelmClient};
 use anyhow::{Context, Result};
 use console::style;
 use std::fs;
 use std::path::Path;
-use vesshelm::clients::helm::{HelmClient, RealHelmClient};
 
 pub async fn run(config_path: &Path) -> Result<()> {
     println!("{} Vesshelm initialization", style("==>").bold().green());

@@ -1,4 +1,5 @@
 pub mod check_updates;
+pub mod delete;
 pub mod deploy;
 pub mod graph;
 pub mod init;

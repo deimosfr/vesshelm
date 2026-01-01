@@ -1,3 +1,6 @@
+use crate::config::{Chart, Config, Destination, HelmConfig};
+use crate::util::progress::ProgressTracker;
+use crate::util::{dag, filter};
 use anyhow::{Context, Result, anyhow};
 use colored::*;
 use console::style;
@@ -7,9 +10,6 @@ use std::process::Stdio;
 use tempfile::NamedTempFile;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
-use vesshelm::config::{Chart, Config, Destination, HelmConfig};
-use vesshelm::util::progress::ProgressTracker;
-use vesshelm::util::{dag, filter};
 
 use super::DeployArgs;
 
@@ -173,7 +173,7 @@ async fn deploy_chart(
     // Handle inline values
     let _values_temp_file: Option<NamedTempFile>; // Keep alive until function end
     if let Some(values) = &chart.values {
-        let content = vesshelm::util::helm::merge_values(values)?;
+        let content = crate::util::helm::merge_values(values)?;
         let mut file = tempfile::Builder::new().suffix(".yaml").tempfile()?;
         write!(file, "{}", content)?;
         values_flags.push_str(" -f ");
@@ -270,7 +270,7 @@ async fn deploy_chart(
 
 fn get_destination_path(
     chart: &Chart,
-    destinations: &[vesshelm::config::Destination],
+    destinations: &[crate::config::Destination],
 ) -> Result<String> {
     // 1. Check for destination override in chart
     if let Some(override_path) = &chart.dest {
@@ -349,7 +349,7 @@ fn interpolate_variables(args_template: &str, chart: &Chart, destination: &str) 
 
 async fn execute_helm_command(
     args: &str,
-    tracker: &vesshelm::util::progress::ProgressTracker,
+    tracker: &crate::util::progress::ProgressTracker,
 ) -> Result<()> {
     tracker.println(&format!("{} helm {}", "⚙️ ".dimmed(), args.dimmed()));
 
@@ -419,7 +419,7 @@ async fn execute_helm_command(
 
 async fn execute_helm_diff(
     args: &str,
-    tracker: &vesshelm::util::progress::ProgressTracker,
+    tracker: &crate::util::progress::ProgressTracker,
 ) -> Result<std::process::Output> {
     tracker.println(&format!("{} helm {}", "🔎 ".dimmed(), args.dimmed()));
 
@@ -483,7 +483,7 @@ async fn terminate_process(child: &mut tokio::process::Child, _pid: u32) -> Resu
 #[cfg(test)]
 mod tests {
     use super::*;
-    use vesshelm::config::{Chart, HelmConfig};
+    use crate::config::{Chart, HelmConfig};
 
     #[test]
     fn test_interpolate_variables() -> Result<()> {

@@ -1,13 +1,13 @@
 use super::SyncArgs;
+use crate::clients::git::RealGitClient;
+use crate::clients::helm::RealHelmClient;
+use crate::config::Config;
+use crate::engine::sync::{SyncEngine, SyncEvent, SyncOptions};
+use crate::lock::Lockfile;
+use crate::util::progress::ProgressTracker;
 use anyhow::{Context, Result};
 use console::style;
 use std::path::Path;
-use vesshelm::clients::git::RealGitClient;
-use vesshelm::clients::helm::RealHelmClient;
-use vesshelm::config::Config;
-use vesshelm::engine::sync::{SyncEngine, SyncEvent, SyncOptions};
-use vesshelm::lock::Lockfile;
-use vesshelm::util::progress::ProgressTracker;
 
 pub async fn run(args: SyncArgs, no_progress: bool, config_path: &Path) -> Result<()> {
     let config = Config::load_from_path(config_path)?;
@@ -15,7 +15,7 @@ pub async fn run(args: SyncArgs, no_progress: bool, config_path: &Path) -> Resul
     // Validate positional charts arguments
     if let Some(charts) = &args.charts {
         let available_names: Vec<_> = config.charts.iter().map(|c| c.name.as_str()).collect();
-        vesshelm::util::filter::validate_chart_args(&available_names, charts)?;
+        crate::util::filter::validate_chart_args(&available_names, charts)?;
     }
 
     // We need to count total charts first for the progress bar

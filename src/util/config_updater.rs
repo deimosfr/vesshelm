@@ -200,8 +200,10 @@ impl ConfigUpdater {
                 continue;
             }
 
-            if current_indent <= section_indent {
-                // End of section (non-comment line at same or lower indent)
+            if current_indent < section_indent
+                || (current_indent == section_indent && !trimmed_line.starts_with("-"))
+            {
+                // End of section (non-comment line at lower indent, or same indent but not a list item)
                 break;
             }
 

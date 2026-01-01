@@ -1,8 +1,9 @@
-mod cli;
-
 use clap::Parser;
 
-use crate::cli::commands::{self, Commands};
+use vesshelm::cli::{
+    self,
+    commands::{self, Commands},
+};
 
 #[tokio::main]
 async fn main() {
@@ -28,8 +29,21 @@ async fn main() {
             Ok(())
         }
         Commands::Completion(args) => commands::completion::completion(args),
-        Commands::Add => commands::add::run(config_path).await,
-        Commands::Delete(args) => commands::delete::run(args.clone(), config_path).await,
+        Commands::Add => {
+            commands::add::run(
+                config_path,
+                &vesshelm::util::interaction::TerminalInteraction,
+            )
+            .await
+        }
+        Commands::Delete(args) => {
+            commands::delete::run(
+                args.clone(),
+                config_path,
+                &vesshelm::util::interaction::TerminalInteraction,
+            )
+            .await
+        }
     };
 
     if let Err(e) = result {

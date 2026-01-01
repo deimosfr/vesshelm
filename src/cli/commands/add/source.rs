@@ -1,8 +1,7 @@
+use crate::clients::artifacthub::{ArtifactHubClient, Package};
+use crate::config::RepoType;
 use anyhow::{Context, Result};
-use dialoguer::{Input, theme::ColorfulTheme};
 use regex::Regex;
-use vesshelm::clients::artifacthub::{ArtifactHubClient, Package};
-use vesshelm::config::RepoType;
 
 pub struct ChartDetails {
     pub repo_name: String,
@@ -14,9 +13,14 @@ pub struct ChartDetails {
     pub comment: Option<String>,
 }
 
+use crate::util::interaction::UserInteraction;
+
 #[async_trait::async_trait]
 pub trait ChartSource {
-    async fn prompt_details(&self) -> Result<ChartDetails>;
+    async fn prompt_details(
+        &self,
+        interaction: &(dyn UserInteraction + Sync),
+    ) -> Result<ChartDetails>;
 }
 
 pub struct ArtifactHubSource;
@@ -110,10 +114,12 @@ fn map_package_to_details(package: Package, comment: Option<String>) -> ChartDet
 
 #[async_trait::async_trait]
 impl ChartSource for ArtifactHubSource {
-    async fn prompt_details(&self) -> Result<ChartDetails> {
-        let url: String = Input::with_theme(&ColorfulTheme::default())
-            .with_prompt("Enter Artifact Hub URL")
-            .interact_text()
+    async fn prompt_details(
+        &self,
+        interaction: &(dyn UserInteraction + Sync),
+    ) -> Result<ChartDetails> {
+        let url: String = interaction
+            .input("Enter Artifact Hub URL", None)
             .context("Failed to read URL input")?;
 
         let (repo_arg, chart_arg) = parse_ah_url(&url)?;
@@ -136,18 +142,15 @@ impl ChartSource for ArtifactHubSource {
 
 #[async_trait::async_trait]
 impl ChartSource for GitSource {
-    async fn prompt_details(&self) -> Result<ChartDetails> {
-        let url: String = Input::with_theme(&ColorfulTheme::default())
-            .with_prompt("Enter Git Repository URL")
-            .interact_text()?;
+    async fn prompt_details(
+        &self,
+        interaction: &(dyn UserInteraction + Sync),
+    ) -> Result<ChartDetails> {
+        let url: String = interaction.input("Enter Git Repository URL", None)?;
 
-        let chart_path: String = Input::with_theme(&ColorfulTheme::default())
-            .with_prompt("Enter path to chart in repo")
-            .interact_text()?;
+        let chart_path: String = interaction.input("Enter path to chart in repo", None)?;
 
-        let version: String = Input::with_theme(&ColorfulTheme::default())
-            .with_prompt("Enter Version (commit/tag/branch)")
-            .interact_text()?;
+        let version: String = interaction.input("Enter Version (commit/tag/branch)", None)?;
 
         let (repo_name, chart_name) = derive_git(&url, &chart_path)?;
 
@@ -165,14 +168,13 @@ impl ChartSource for GitSource {
 
 #[async_trait::async_trait]
 impl ChartSource for OciSource {
-    async fn prompt_details(&self) -> Result<ChartDetails> {
-        let url: String = Input::with_theme(&ColorfulTheme::default())
-            .with_prompt("Enter OCI URL")
-            .interact_text()?;
+    async fn prompt_details(
+        &self,
+        interaction: &(dyn UserInteraction + Sync),
+    ) -> Result<ChartDetails> {
+        let url: String = interaction.input("Enter OCI URL", None)?;
 
-        let version: String = Input::with_theme(&ColorfulTheme::default())
-            .with_prompt("Enter Version")
-            .interact_text()?;
+        let version: String = interaction.input("Enter Version", None)?;
 
         let (repo_name, repo_url, chart_name) = derive_oci(&url)?;
 
@@ -199,7 +201,7 @@ pub fn get_source(selection: usize) -> Option<Box<dyn ChartSource>> {
 
 #[cfg(test)]
 mod tests {
-    use vesshelm::clients::artifacthub::Repository;
+    use crate::clients::artifacthub::Repository;
 
     use super::*;
 

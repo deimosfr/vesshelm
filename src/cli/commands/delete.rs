@@ -1,16 +1,20 @@
 use super::DeleteArgs;
+use crate::clients::{HelmClient, helm::RealHelmClient};
+use crate::config::{Chart, Config};
+use crate::lock::Lockfile;
+use crate::util::config_updater::ConfigUpdater;
+use crate::util::dag;
+use crate::util::interaction::UserInteraction;
 use anyhow::{Context, Result, anyhow};
 use console::style;
-use dialoguer::{Confirm, FuzzySelect, theme::ColorfulTheme};
 use std::fs;
 use std::path::Path;
-use vesshelm::clients::{HelmClient, helm::RealHelmClient};
-use vesshelm::config::{Chart, Config};
-use vesshelm::lock::Lockfile;
-use vesshelm::util::config_updater::ConfigUpdater;
-use vesshelm::util::dag;
 
-pub async fn run(args: DeleteArgs, config_path: &Path) -> Result<()> {
+pub async fn run(
+    args: DeleteArgs,
+    config_path: &Path,
+    interaction: &impl UserInteraction,
+) -> Result<()> {
     println!("{} Deleting charts...", style("==>").bold().green());
 
     // 1. Load configuration
@@ -37,11 +41,8 @@ pub async fn run(args: DeleteArgs, config_path: &Path) -> Result<()> {
                 .map(|c| format!("{} (ns: {})", c.name, c.namespace))
                 .collect();
 
-            let selection = FuzzySelect::with_theme(&ColorfulTheme::default())
-                .with_prompt("Select chart instance")
-                .items(&items)
-                .default(0)
-                .interact()
+            let selection = interaction
+                .fuzzy_select("Select chart instance", &items, 0)
                 .context("Failed to read selection")?;
 
             matches[selection]
@@ -62,11 +63,8 @@ pub async fn run(args: DeleteArgs, config_path: &Path) -> Result<()> {
             .map(|c| format!("{} ({})", c.name, style(&c.namespace).dim()))
             .collect();
 
-        let selection = FuzzySelect::with_theme(&ColorfulTheme::default())
-            .with_prompt("Select chart to delete")
-            .items(&items)
-            .default(0)
-            .interact()
+        let selection = interaction
+            .fuzzy_select("Select chart to delete", &items, 0)
             .context("Failed to read selection")?;
 
         sorted_charts[selection]
@@ -115,10 +113,8 @@ pub async fn run(args: DeleteArgs, config_path: &Path) -> Result<()> {
 
     // Ask for uninstall if interactive
     let uninstall_release = if !args.no_interactive {
-        Confirm::with_theme(&ColorfulTheme::default())
-            .with_prompt("Do you also want to uninstall the Helm release?")
-            .default(false)
-            .interact()
+        interaction
+            .confirm("Do you also want to uninstall the Helm release?", false)
             .unwrap_or(false)
     } else {
         false
@@ -167,12 +163,7 @@ pub async fn run(args: DeleteArgs, config_path: &Path) -> Result<()> {
     println!("{:<25} {}", "  Action:", action_parts.join(", "));
 
     // 5. Confirmation
-    if !args.no_interactive
-        && !Confirm::with_theme(&ColorfulTheme::default())
-            .with_prompt("Do you want to continue?")
-            .default(false)
-            .interact()?
-    {
+    if !args.no_interactive && !interaction.confirm("Do you want to continue?", false)? {
         println!(" {} Deletion aborted.", style("[ABORT]").dim());
         return Ok(());
     }
@@ -280,7 +271,7 @@ fn resolve_delete_path(config: &Config, chart: &Chart) -> Result<std::path::Path
 #[cfg(test)]
 mod tests {
     use super::*;
-    use vesshelm::config::Destination;
+    use crate::config::Destination;
 
     #[test]
     fn test_resolve_delete_path_standard() {

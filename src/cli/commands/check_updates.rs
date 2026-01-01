@@ -1,8 +1,8 @@
+use crate::config::{Config, RepoType};
 use anyhow::{Context, Result, anyhow};
 use colored::*;
 use console::style;
 use semver::Version;
-use vesshelm::config::{Config, RepoType};
 
 use std::process::Command;
 
@@ -111,7 +111,7 @@ pub async fn run(
 
     let should_apply = args.apply || args.apply_sync;
 
-    use vesshelm::util::config_updater::ConfigUpdater;
+    use crate::util::config_updater::ConfigUpdater;
 
     // ... existing imports ...
 
