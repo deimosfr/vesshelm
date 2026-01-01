@@ -37,32 +37,57 @@ fn parse_ah_url(url: &str) -> Result<(String, String)> {
     Ok((repo, chart))
 }
 
-fn derive_git(url: &str, chart_path: &str) -> (String, String) {
-    let repo_name = url
-        .trim_end_matches('/')
+fn derive_git(url: &str, chart_path: &str) -> Result<(String, String)> {
+    let url_clean = url.trim_end_matches('/');
+    // Strip .git only if it's at the end
+    let url_no_git = url_clean.strip_suffix(".git").unwrap_or(url_clean);
+
+    let repo_name = url_no_git
         .split('/')
         .next_back()
-        .unwrap_or("git-repo")
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| anyhow::anyhow!("Could not derive repo name from URL '{}'", url))?
         .to_string();
+
     let chart_name = chart_path
         .trim_end_matches('/')
         .split('/')
         .next_back()
-        .unwrap_or("chart")
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| anyhow::anyhow!("Could not derive chart name from path '{}'", chart_path))?
         .to_string();
-    (repo_name, chart_name)
+
+    Ok((repo_name, chart_name))
 }
 
-fn derive_oci(url: &str) -> (String, String, String) {
+fn derive_oci(url: &str) -> Result<(String, String, String)> {
+    if !url.starts_with("oci://") {
+        return Err(anyhow::anyhow!("URL must start with 'oci://'"));
+    }
+
     let parts: Vec<&str> = url.split('/').collect();
+    // Expected format: oci://host/path/to/chart
+    // parts[0] = "oci:", parts[1] = "", parts[2] = host
+
+    if parts.len() < 3 {
+        return Err(anyhow::anyhow!("Invalid OCI URL format '{}'", url));
+    }
+
     let (repo_url, chart_name_derived) = if let Some((last, rest)) = parts.split_last() {
+        if last.is_empty() {
+            return Err(anyhow::anyhow!(
+                "OCI URL cannot end with a slash or be empty"
+            ));
+        }
         (rest.join("/"), last.to_string())
     } else {
-        (url.to_string(), "oci-chart".to_string())
+        // Should be unreachable if len >= 3
+        return Err(anyhow::anyhow!("Invalid OCI URL parsing"));
     };
-    // For OCI repo name derivation, we use chart name as default?
+
+    // For OCI repo name derivation, we use chart name as default
     let repo_name = chart_name_derived.clone();
-    (repo_name, repo_url, chart_name_derived)
+    Ok((repo_name, repo_url, chart_name_derived))
 }
 
 fn map_package_to_details(package: Package, comment: Option<String>) -> ChartDetails {
@@ -124,7 +149,7 @@ impl ChartSource for GitSource {
             .with_prompt("Enter Version (commit/tag/branch)")
             .interact_text()?;
 
-        let (repo_name, chart_name) = derive_git(&url, &chart_path);
+        let (repo_name, chart_name) = derive_git(&url, &chart_path)?;
 
         Ok(ChartDetails {
             repo_name,
@@ -149,7 +174,7 @@ impl ChartSource for OciSource {
             .with_prompt("Enter Version")
             .interact_text()?;
 
-        let (repo_name, repo_url, chart_name) = derive_oci(&url);
+        let (repo_name, repo_url, chart_name) = derive_oci(&url)?;
 
         Ok(ChartDetails {
             repo_name,
@@ -193,12 +218,28 @@ mod tests {
     }
 
     #[test]
-    fn test_derive_git() {
+    fn test_derive_git_valid() {
         let url = "https://github.com/kubernetes-csi/csi-driver-smb";
         let path = "charts/v1.19.1/csi-driver-smb";
-        let (repo, chart) = derive_git(url, path);
+        let (repo, chart) = derive_git(url, path).unwrap();
         assert_eq!(repo, "csi-driver-smb");
         assert_eq!(chart, "csi-driver-smb");
+
+        // With .git suffix
+        let url_git = "https://github.com/kubernetes-csi/csi-driver-smb.git";
+        let (repo2, chart2) = derive_git(url_git, path).unwrap();
+        assert_eq!(repo2, "csi-driver-smb");
+        assert_eq!(chart2, "csi-driver-smb");
+    }
+
+    #[test]
+    fn test_derive_git_invalid() {
+        // Empty URL
+        assert!(derive_git("", "foo").is_err());
+        // Empty Path
+        assert!(derive_git("https://foo.com", "").is_err());
+        // Just slashes
+        assert!(derive_git("///", "///").is_err());
     }
 
     #[test]
@@ -237,11 +278,19 @@ mod tests {
     }
 
     #[test]
-    fn test_derive_oci() {
+    fn test_derive_oci_valid() {
         let url = "oci://code.forgejo.org/forgejo-helm/forgejo";
-        let (repo_name, repo_url, chart_name) = derive_oci(url);
+        let (repo_name, repo_url, chart_name) = derive_oci(url).unwrap();
         assert_eq!(repo_name, "forgejo");
         assert_eq!(chart_name, "forgejo");
         assert_eq!(repo_url, "oci://code.forgejo.org/forgejo-helm");
+    }
+
+    #[test]
+    fn test_derive_oci_invalid() {
+        // Must start with oci://
+        assert!(derive_oci("https://google.com").is_err());
+        // Too short
+        assert!(derive_oci("oci://").is_err());
     }
 }
