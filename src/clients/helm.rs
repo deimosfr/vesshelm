@@ -11,6 +11,7 @@ pub trait HelmClient {
     fn pull(&self, repo: &str, chart: &str, version: &str, dest_dir: &Path) -> Result<()>;
     fn is_plugin_installed(&self, plugin_name: &str) -> Result<bool>;
     fn install_plugin(&self, plugin_name: &str, url: &str, verify: bool) -> Result<()>;
+    fn uninstall(&self, name: &str, namespace: &str) -> Result<()>;
 }
 
 pub struct RealHelmClient;
@@ -124,6 +125,25 @@ impl HelmClient for RealHelmClient {
                 plugin_name,
                 String::from_utf8_lossy(&output.stderr)
             );
+        }
+        Ok(())
+    }
+
+    fn uninstall(&self, name: &str, namespace: &str) -> Result<()> {
+        let output = Command::new("helm")
+            .arg("uninstall")
+            .arg(name)
+            .arg("-n")
+            .arg(namespace)
+            .output()
+            .context("Failed to execute helm uninstall")?;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            if stderr.contains("release: not found") {
+                return Ok(());
+            }
+            anyhow::bail!("Failed to uninstall release {}: {}", name, stderr);
         }
         Ok(())
     }

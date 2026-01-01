@@ -1,0 +1,9 @@
+- [x] Update `HelmClient` trait and implementation in `src/clients/helm.rs` to add `uninstall` method.
+- [x] Update `src/cli/commands/delete.rs`:
+    - [x] Add interactive prompt for release uninstallation.
+    - [x] Update Summary output to reflect this choice.
+    - [x] Implement conditional execution logic:
+        - [x] Execute `helm uninstall`.
+        - [x] Handle failure (abort config removal).
+        - [x] Proceed if success or "not found".
+- [x] Verify functionality (mocking Helm calls likely required for unit tests, or manual verification).

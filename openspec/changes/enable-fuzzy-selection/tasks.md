@@ -1,0 +1,5 @@
+- [x] Update `Cargo.toml` to enable `fuzzy-select` feature for `dialoguer` (if not already enabled/default).
+- [x] Update `src/cli/commands/delete.rs` to use `FuzzySelect`.
+  - [x] Replace `Select` with `FuzzySelect` for chart list.
+  - [x] Replace `Select` with `FuzzySelect` for ambiguous namespace resolution (optional, but consistent).
+- [x] Verify functionality.

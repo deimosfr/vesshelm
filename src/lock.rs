@@ -55,4 +55,9 @@ impl Lockfile {
             });
         }
     }
+
+    pub fn remove(&mut self, name: &str, repo_name: &str) {
+        self.charts
+            .retain(|c| !(c.name == name && c.repo_name == repo_name));
+    }
 }

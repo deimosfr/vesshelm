@@ -1,15 +1,15 @@
 use anyhow::{Context, Result, anyhow};
-use colored::*;
+// use colored::*; // Unused
 use console::style;
 use dialoguer::Confirm;
-use std::process::Command;
+use vesshelm::clients::{HelmClient, helm::RealHelmClient};
 use vesshelm::config::Config;
 
 use super::UninstallArgs;
 
 pub async fn run(args: UninstallArgs, config_path: &std::path::Path) -> Result<()> {
     let name = args.name;
-    println!("{} Uninstalling {}...", style("==>").bold().green(), name);
+    println!("Uninstalling {}...", name);
 
     // Load configuration
     let config = Config::load_from_path(config_path)?;
@@ -27,8 +27,8 @@ pub async fn run(args: UninstallArgs, config_path: &std::path::Path) -> Result<(
 
     if !dependents.is_empty() {
         println!(
-            "{} The following charts depend on '{}':",
-            "⚠️ ".yellow(),
+            " {} The following charts depend on '{}':",
+            style("WARN:").yellow(),
             style(&chart.name).bold()
         );
         for dep in &dependents {
@@ -37,16 +37,16 @@ pub async fn run(args: UninstallArgs, config_path: &std::path::Path) -> Result<(
         println!();
     } else {
         println!(
-            "{} No other charts depend on '{}'. It is safe to remove regarding dependencies.",
-            "✅ ".green(),
+            " {} No other charts depend on '{}'. It is safe to remove regarding dependencies.",
+            style("[OK]").green(),
             style(&chart.name).bold()
         );
     }
 
     // Warning
     println!(
-        "{} You are about to uninstall the chart '{}' from namespace '{}'.",
-        "⚠️ ".yellow(),
+        " {} You are about to uninstall the chart '{}' from namespace '{}'.",
+        style("WARN:").yellow(),
         style(&chart.name).bold(),
         style(&chart.namespace).bold()
     );
@@ -63,38 +63,32 @@ pub async fn run(args: UninstallArgs, config_path: &std::path::Path) -> Result<(
     };
 
     if !confirmation {
-        println!("{} Uninstallation aborted.", "🚫 ".dimmed());
+        println!(" {} Uninstallation aborted.", style("[ABORT]").dim());
         return Ok(());
     }
 
-    println!("{} Uninstalling {}...", "🗑️ ".red(), chart.name);
+    println!("Uninstalling {}...", chart.name);
 
     // Run helm uninstall
-    // helm uninstall <name> -n <namespace>
-    let output = Command::new("helm")
-        .arg("uninstall")
-        .arg(&chart.name)
-        .arg("-n")
-        .arg(&chart.namespace)
-        .output()
-        .context("Failed to execute helm uninstall command")?;
-
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        eprintln!(
-            "{} Failed to uninstall {}: {}",
-            "❌ ".red(),
-            chart.name,
-            stderr
-        );
-        return Err(anyhow!("Helm uninstall failed"));
+    let client = RealHelmClient::new();
+    match client.uninstall(&chart.name, &chart.namespace) {
+        Ok(_) => {
+            println!(
+                " {} Successfully uninstalled {}.",
+                style("[OK]").green(),
+                style(&chart.name).bold()
+            );
+        }
+        Err(e) => {
+            eprintln!(
+                " {} Failed to uninstall {}: {}",
+                style("[FAIL]").red(),
+                chart.name,
+                e
+            );
+            return Err(e);
+        }
     }
-
-    println!(
-        "{} Successfully uninstalled {}.",
-        "✅ ".green(),
-        style(&chart.name).bold()
-    );
 
     Ok(())
 }

@@ -1,0 +1,5 @@
+- [x] Update `src/cli/commands/delete.rs` logic.
+  - [x] Correctly join repository path with chart name to get full path.
+  - [x] Update `println!` logic to separate Namespace.
+  - [x] Update "Action" string to include directory deletion.
+- [x] Verify fix.

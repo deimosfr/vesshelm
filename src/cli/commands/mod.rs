@@ -1,6 +1,7 @@
 pub mod add;
 pub mod check_updates;
 pub mod completion;
+pub mod delete;
 pub mod deploy;
 pub mod graph;
 pub mod init;
@@ -32,6 +33,8 @@ pub enum Commands {
     Completion(CompletionArgs),
     /// Add a new chart to the configuration
     Add,
+    /// Delete a chart from configuration and filesystem
+    Delete(DeleteArgs),
 }
 
 #[derive(Args, Clone, Debug)]
@@ -96,4 +99,14 @@ pub struct CheckUpdatesArgs {
 
     /// Only check specified charts
     pub charts: Option<Vec<String>>,
+}
+
+#[derive(Args, Clone, Debug)]
+pub struct DeleteArgs {
+    /// The name of the chart to delete
+    pub name: Option<String>,
+
+    /// Skip interactive confirmation
+    #[clap(long)]
+    pub no_interactive: bool,
 }

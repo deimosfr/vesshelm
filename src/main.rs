@@ -29,6 +29,7 @@ async fn main() {
         }
         Commands::Completion(args) => commands::completion::completion(args),
         Commands::Add => commands::add::run(config_path).await,
+        Commands::Delete(args) => commands::delete::run(args.clone(), config_path).await,
     };
 
     if let Err(e) = result {

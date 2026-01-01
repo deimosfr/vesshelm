@@ -130,6 +130,191 @@ impl ConfigUpdater {
             chart_name
         ))
     }
+    pub fn remove_chart(config_path: &Path, chart_name: &str, namespace: &str) -> Result<()> {
+        let file_content =
+            std::fs::read_to_string(config_path).context("Failed to read config file")?;
+
+        let new_content = Self::remove_list_item_by_fields(
+            &file_content,
+            "charts",
+            &[("name", chart_name), ("namespace", namespace)],
+        )?;
+
+        if file_content != new_content {
+            std::fs::write(config_path, new_content).context("Failed to write updated config")?;
+        }
+        Ok(())
+    }
+
+    pub fn remove_repository(config_path: &Path, repo_name: &str) -> Result<()> {
+        let file_content =
+            std::fs::read_to_string(config_path).context("Failed to read config file")?;
+
+        let new_content = Self::remove_list_item_by_fields(
+            &file_content,
+            "repositories",
+            &[("name", repo_name)],
+        )?;
+
+        if file_content != new_content {
+            std::fs::write(config_path, new_content).context("Failed to write updated config")?;
+        }
+        Ok(())
+    }
+
+    /// Generic helper to remove a list item that matches specific field values.
+    fn remove_list_item_by_fields(
+        content: &str,
+        section_key: &str,
+        fields: &[(&str, &str)], // (key, value) pairs that must ALL match
+    ) -> Result<String> {
+        let lines: Vec<&str> = content.lines().collect();
+
+        // 1. Find section start
+        let section_idx = lines
+            .iter()
+            .position(|l| l.trim_start().starts_with(&format!("{}:", section_key)));
+        if section_idx.is_none() {
+            return Ok(content.to_string());
+        }
+        let section_idx = section_idx.unwrap();
+
+        // 2. Iterate items
+        let mut i = section_idx + 1;
+        while i < lines.len() {
+            let line = lines[i];
+            // Check if end of section (dedent or new key at same level)
+            // Assuming section key is top level or indented.
+            // We assume standard 2-space indentation for list items usually, so if we see something with same indent as section_key, we break.
+            // But let's check indent.
+            let section_indent = lines[section_idx]
+                .find(|c: char| !c.is_whitespace())
+                .unwrap_or(0);
+            let current_indent = line.find(|c: char| !c.is_whitespace()).unwrap_or(0);
+
+            // Skip comments and empty lines in the main loop checks
+            // We don't want a comment at the same level as the section key to break the section.
+            let trimmed_line = line.trim();
+            if trimmed_line.is_empty() || trimmed_line.starts_with('#') {
+                i += 1;
+                continue;
+            }
+
+            if current_indent <= section_indent {
+                // End of section (non-comment line at same or lower indent)
+                break;
+            }
+
+            // Check if list item start
+            if line.trim_start().starts_with("-") {
+                let item_start = i;
+                let mut item_end = i + 1;
+                let item_indent = current_indent; // The indent of the dash
+
+                // Find end of this item (next item or end of section)
+                while item_end < lines.len() {
+                    let next_line = lines[item_end];
+
+                    let trimmed_next = next_line.trim_start();
+
+                    if trimmed_next.is_empty() {
+                        // Empty line. Look ahead to see if the next non-empty line acts as a separator (e.g., a header comment).
+                        let mut lookahead = item_end + 1;
+                        let mut found_header = false;
+                        while lookahead < lines.len() {
+                            let l = lines[lookahead].trim_start();
+                            if l.is_empty() {
+                                lookahead += 1;
+                                continue;
+                            }
+                            // If we see a comment block after empty lines, we assume it's a section header or separate block.
+                            // STOPS consumption.
+                            if l.starts_with('#') {
+                                found_header = true;
+                            }
+                            // We stop looking after finding the first non-empty line
+                            break;
+                        }
+
+                        if found_header {
+                            // The empty line is followed by a comment (header).
+                            // We should stop here.
+                            break;
+                        }
+
+                        // Standard empty line consumption (within item or between items without header)
+                        item_end += 1;
+                        continue;
+                    }
+
+                    if trimmed_next.starts_with('#') {
+                        // Comment immediately following (no empty line).
+                        // Likely belongs to the item.
+                        item_end += 1;
+                        continue;
+                    }
+
+                    let next_indent = next_line.find(|c: char| !c.is_whitespace()).unwrap_or(0);
+
+                    if next_indent <= section_indent {
+                        break; // End of section (dedent or same level key)
+                    }
+                    if next_indent == item_indent && trimmed_next.starts_with('-') {
+                        break; // Next item
+                    }
+
+                    item_end += 1;
+                }
+
+                // Check matches in this block [item_start, item_end)
+                // We construct a mini-string to parse? No, just regex check line by line.
+                // Careful: indentation.
+                let block_lines = &lines[item_start..item_end];
+                let mut all_matched = true;
+
+                for (key, val) in fields {
+                    // Regex find `key:\s*val`
+                    // Just simple string contains check might fail if commented out.
+                    // Let's use Regex.
+                    // We assume values don't span multiple lines for now (names usually don't).
+                    // Regex to match `key: value` with optional quotes and comments
+                    let re = Regex::new(&format!(
+                        r"(?m)^\s*(- )?{}:\s*['\x22]?{}['\x22]?\s*(#.*)?$",
+                        regex::escape(key),
+                        regex::escape(val)
+                    ))
+                    .map_err(|e| anyhow!("Regex error: {}", e))?;
+
+                    let found = block_lines.iter().any(|l| re.is_match(l));
+                    if !found {
+                        all_matched = false;
+                        break;
+                    }
+                }
+
+                if all_matched {
+                    // Remove this block [item_start, item_end)
+                    // We construct new string without these lines.
+                    let mut new_lines = lines.clone();
+                    new_lines.drain(item_start..item_end);
+                    // Join with newline.
+                    // If we removed the last item and left a dangling "charts:", that's technically valid valid YAML (empty list/null), but cleaner to keep it.
+                    // Note: This naive join loses specific line endings (\n vs \r\n) if mixed, but std join uses \n.
+                    return Ok(
+                        new_lines.join("\n") + if content.ends_with("\n") { "\n" } else { "" }
+                    );
+                }
+
+                // Move i to next item
+                i = item_end;
+                continue;
+            }
+
+            i += 1;
+        }
+
+        Ok(content.to_string())
+    }
 }
 
 pub struct ChartConfig {
@@ -235,5 +420,127 @@ charts:
             .expect("replacement failed");
         assert!(yaml_content_2.contains("version: v1.2.4"));
         assert!(!yaml_content_2.contains("version: v1.2.3"));
+    }
+
+    #[test]
+    fn test_remove_list_item() {
+        let content = r#"# start
+repositories:
+  - name: repo1
+    url: url1
+  - name: repo2
+    url: url2
+charts:
+  - name: chart1
+    namespace: ns1
+    # comment
+  - name: chart2
+    namespace: ns2
+    # comment 2
+"#;
+
+        // Test removing chart1
+        let res =
+            ConfigUpdater::remove_list_item_by_fields(content, "charts", &[("name", "chart1")])
+                .unwrap();
+        assert!(!res.contains("name: chart1"));
+        assert!(res.contains("name: chart2"));
+        assert!(res.contains("# comment 2"));
+        // Check formatting preservation
+        assert!(res.starts_with("# start\nrepositories:"));
+
+        // Test removing repo2
+        let res2 = ConfigUpdater::remove_list_item_by_fields(
+            content,
+            "repositories",
+            &[("name", "repo2")],
+        )
+        .unwrap();
+        assert!(!res2.contains("name: repo2"));
+        assert!(res2.contains("name: repo1"));
+        assert!(res2.contains("url: url1"));
+
+        // Test removing chart with multiple fields
+        let res3 = ConfigUpdater::remove_list_item_by_fields(
+            content,
+            "charts",
+            &[("name", "chart2"), ("namespace", "ns2")],
+        )
+        .unwrap();
+        assert!(!res3.contains("name: chart2"));
+        assert!(res3.contains("name: chart1"));
+    }
+
+    #[test]
+    fn test_remove_list_item_with_quotes() {
+        let content = r#"charts:
+  - name: "chart-quoted"
+    namespace: 'ns-quoted'
+  - name: chart-normal
+"#;
+        let res = ConfigUpdater::remove_list_item_by_fields(
+            content,
+            "charts",
+            &[("name", "chart-quoted"), ("namespace", "ns-quoted")],
+        )
+        .unwrap();
+
+        assert!(!res.contains("chart-quoted"));
+        assert!(res.contains("chart-normal"));
+    }
+    #[test]
+    fn test_remove_list_item_with_comments_and_headers() {
+        let content = r#"charts:
+
+########################
+# Network
+########################
+
+  - name: chart1
+    namespace: ns1
+
+########################
+# Misc
+########################
+
+  - name: chart2
+    namespace: ns2
+"#;
+        // Try to remove chart2, which is after a header
+        let res =
+            ConfigUpdater::remove_list_item_by_fields(content, "charts", &[("name", "chart2")])
+                .unwrap();
+
+        assert!(!res.contains("name: chart2"));
+        assert!(res.contains("name: chart1"));
+
+        // Try to remove chart1, which is after a header relative to "charts:"
+        let res2 =
+            ConfigUpdater::remove_list_item_by_fields(content, "charts", &[("name", "chart1")])
+                .unwrap();
+        assert!(!res2.contains("name: chart1"));
+        assert!(res2.contains("name: chart2"));
+    }
+
+    #[test]
+    fn test_remove_list_item_preserves_headers_with_newline() {
+        let content = r#"charts:
+  - name: chart1
+    version: 1.0.0
+
+########################
+# Misc
+########################
+
+  - name: chart2
+"#;
+        let res =
+            ConfigUpdater::remove_list_item_by_fields(content, "charts", &[("name", "chart1")])
+                .unwrap();
+
+        assert!(!res.contains("name: chart1"));
+        assert!(res.contains("########################"));
+        assert!(res.contains("# Misc"));
+        assert!(res.contains("name: chart2"));
     }
 }

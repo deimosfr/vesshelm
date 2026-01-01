@@ -76,10 +76,17 @@ And the system runs validation
 The `add` command MUST display a summary that matches the visual style of existing commands, specifically `sync`.
 
 #### Scenario: Visual Style and Alignment
-Given the command lists added items
-Then the status tag `[NEW]` is displayed
-And the status tag is aligned with `[OK]` tags from other commands (e.g. using similar padding)
-And the repository/chart name follows the tag
+Given the `add` command displays the summary
+Then the status tag `[NEW]` is displayed for new items (Repository, Chart)
+And if the repository already exists, `[EXISTS]` (or similar indicator like just listing it without [NEW]) is used or it is noted as existing.
+And the summary MUST follow this format:
+  - Repository line with status `[NEW]` or existing indication.
+  - Chart line with status `[NEW]`.
+  - Version on a dedicated line, indented by 9 spaces to align with the labels.
+  - Namespace on a dedicated line, indented by 9 spaces.
+  - Repo name on a dedicated line, indented by 9 spaces.
+And the status tags MUST be aligned with `[OK]` from other commands (7 chars padding).
+And the resulting indentation for details MUST align exactly with the start of "Repository" and "Chart" labels (prefix: 1 space + 7 chars tag + 1 space = 9 chars).
 ### Requirement: Code Quality
 The `add` command implementation MUST be modular and testable.
 

@@ -10,6 +10,8 @@ use source::get_source;
 use vesshelm::util::config_updater::{ChartConfig, ConfigUpdater};
 
 pub async fn run(config_path: &Path) -> Result<()> {
+    println!("{} Adding chart...", style("==>").bold().green());
+
     // 1. Source Selection
     let sources = vec!["Artifact Hub", "Git", "OCI"];
     let selection = Select::with_theme(&ColorfulTheme::default())
@@ -100,28 +102,27 @@ pub async fn run(config_path: &Path) -> Result<()> {
     println!("\n\n{}", style("Summary:").bold());
     if let Some(r) = &new_repo {
         println!(
-            " {}  Repository: {} {}",
+            " {:<7} Repository: {} {}",
             style("[NEW]").green(),
             style(&r.name).bold(),
             style(format!("({})", r.url)).dim()
         );
     } else {
         println!(
-            " {}   Repository: {}",
-            style("[OK]").blue(),
+            " {:<7} Repository: {}",
+            style("[OK]").green(),
             style(&repo_name_to_use).bold()
         );
     }
 
     let version_display = details.version.clone().unwrap_or_default();
     println!(
-        " {}  Chart: {} {}",
+        " {:<7} Chart: {}",
         style("[NEW]").green(),
-        style(&chart_name).bold(),
-        style(format!("(v{})", version_display)).dim()
+        style(&chart_name).bold()
     );
-    println!("        Namespace: {}", namespace);
-    println!("        Repo: {}", repo_name_to_use);
+    println!("         Version: {}", version_display);
+    println!("         Namespace: {}", namespace);
 
     if Confirm::with_theme(&ColorfulTheme::default())
         .with_prompt("Add to config?")
