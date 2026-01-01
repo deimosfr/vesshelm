@@ -11,6 +11,7 @@ pub struct ChartDetails {
     pub version: Option<String>,
     pub chart_path: Option<String>,
     pub repo_type: RepoType,
+    pub comment: Option<String>,
 }
 
 #[async_trait::async_trait]
@@ -64,7 +65,7 @@ fn derive_oci(url: &str) -> (String, String, String) {
     (repo_name, repo_url, chart_name_derived)
 }
 
-fn map_package_to_details(package: Package) -> ChartDetails {
+fn map_package_to_details(package: Package, comment: Option<String>) -> ChartDetails {
     let repo_type = if package.repository.url.starts_with("oci://") {
         RepoType::Oci
     } else {
@@ -78,6 +79,7 @@ fn map_package_to_details(package: Package) -> ChartDetails {
         version: Some(package.version),
         chart_path: None,
         repo_type,
+        comment,
     }
 }
 
@@ -103,7 +105,7 @@ impl ChartSource for ArtifactHubSource {
             package.name, package.version, package.repository.url
         );
 
-        Ok(map_package_to_details(package))
+        Ok(map_package_to_details(package, Some(url)))
     }
 }
 
@@ -126,11 +128,12 @@ impl ChartSource for GitSource {
 
         Ok(ChartDetails {
             repo_name,
-            repo_url: url,
+            repo_url: url.clone(),
             chart_name,
             version: Some(version),
             chart_path: Some(chart_path),
             repo_type: RepoType::Git,
+            comment: Some(url),
         })
     }
 }
@@ -155,6 +158,7 @@ impl ChartSource for OciSource {
             version: Some(version),
             chart_path: None,
             repo_type: RepoType::Oci,
+            comment: Some(url),
         })
     }
 }
@@ -208,7 +212,7 @@ mod tests {
             },
         };
 
-        let details = map_package_to_details(pkg);
+        let details = map_package_to_details(pkg, None);
         assert_eq!(details.repo_type, RepoType::Helm);
         assert_eq!(details.repo_url, "https://charts.example.com");
     }
@@ -224,7 +228,7 @@ mod tests {
             },
         };
 
-        let details = map_package_to_details(pkg);
+        let details = map_package_to_details(pkg, None);
         assert_eq!(details.repo_type, RepoType::Oci);
         assert_eq!(
             details.repo_url,

@@ -2,7 +2,7 @@
 <img src="logo.png" alt="Vesshelm logo" width="450"/>
 </p>
 
-Vesshelm is a modern, reliable, and user-friendly tool for managing Helm charts, designed as an alternative to [helm-freeze](https://github.com/Qovery/helm-freeze) and [helmfile](https://github.com/helmfile/helmfile). It simplifies the process of syncing charts from various sources (Helm repositories, Git repositories, OCI registries, and local files) and deploying them with confidence. Everything is local-first and reproducible.
+Vesshelm is a modern, reliable, and user-friendly tool for managing Helm charts, designed as an alternative to  [helmfile](https://github.com/helmfile/helmfile), and [helm-freeze](https://github.com/Qovery/helm-freeze). It simplifies the process of syncing charts from various sources (Helm repositories, Git repositories, OCI registries, and local files) and deploying them with confidence. Everything is local-first and reproducible.
 
 ## Features
 

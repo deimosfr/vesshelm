@@ -59,9 +59,11 @@ Then the system uses the existing repository name
 ### Requirement: Chart Configuration
 The `add` command MUST allow the user to customize chart configuration.
 
-#### Scenario: Set Namespace
+#### Scenario: Set Namespace with Suggestions
 Given the system has identified the chart
-Then the user is prompted to enter a namespace
+Then the user is prompted to select a namespace
+And the system suggests a list of existing namespaces found in `vesshelm.yaml`
+And the user can select one from the list OR enter a new namespace manually
 
 ### Requirement: Review and Persist
 The `add` command MUST display a summary and ask for confirmation before writing.
@@ -103,6 +105,17 @@ The `add` command MUST update `vesshelm.yaml` without modifying existing content
 Given the user confirms adding a new chart
 Then the system appends the new entry to `vesshelm.yaml`
 And the system DOES NOT re-serialize the entire file (preserving comments)
+
+### Requirement: Source URL Comment
+The `add` command MUST store the URL provided by the user as a comment in the chart configuration, if applicable.
+
+#### Scenario: Artifact Hub URL
+Given the user provides an Artifact Hub URL (e.g., `https://artifacthub.io/...`)
+Then the generated chart entry in `vesshelm.yaml` MUST have a `comment` field set to that URL.
+
+#### Scenario: Git/OCI URL
+Given the user provides a Git or OCI URL
+Then the generated chart entry MUST have a `comment` field set to that URL.
 
 ### Requirement: Concise Configuration
 The `add` command MUST NOT write default or null values to `vesshelm.yaml`.

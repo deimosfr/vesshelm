@@ -28,3 +28,9 @@
     - [x] Tests for `GitSource` and `OciSource` logic
     - [x] Tests for `ConfigUpdater` (smart append correctness)
 - [x] Verification: Manual Test of all 3 types <!-- id: 9 -->
+- [x] Refinement: Summary & URL Comments <!-- id: 12 -->
+    - [x] Refine summary format (aligned tags, version line)
+    - [x] Strict 9-space indentation for summary details
+    - [x] Store source URL as comment in `ChartDetails`
+    - [x] Populate `comment` field in `run` function
+    - [ ] Implement namespace suggestion from config

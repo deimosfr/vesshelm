@@ -73,9 +73,38 @@ pub async fn run(config_path: &Path) -> Result<()> {
         .validate_with(|_input: &String| -> Result<(), &str> { Ok(()) })
         .interact_text()?;
 
-    let namespace: String = Input::with_theme(&ColorfulTheme::default())
-        .with_prompt("Namespace")
-        .interact_text()?;
+    // Namespace Selection
+    let mut namespaces: Vec<String> = config
+        .charts
+        .iter()
+        .map(|c| c.namespace.clone())
+        .collect::<std::collections::HashSet<_>>()
+        .into_iter()
+        .collect();
+    namespaces.sort();
+
+    let namespace = if namespaces.is_empty() {
+        Input::with_theme(&ColorfulTheme::default())
+            .with_prompt("Namespace")
+            .interact_text()?
+    } else {
+        let mut selection_items = namespaces.clone();
+        selection_items.push("Create new...".to_string());
+
+        let selection = Select::with_theme(&ColorfulTheme::default())
+            .with_prompt("Select Namespace")
+            .items(&selection_items)
+            .default(0)
+            .interact()?;
+
+        if selection == namespaces.len() {
+            Input::with_theme(&ColorfulTheme::default())
+                .with_prompt("New Namespace")
+                .interact_text()?
+        } else {
+            namespaces[selection].clone()
+        }
+    };
 
     // Check uniqueness
     if config
@@ -135,7 +164,7 @@ pub async fn run(config_path: &Path) -> Result<()> {
             namespace,
             version: details.version,
             chart_path: details.chart_path,
-            comment: None, // We decided to omit comment for now unless specific requirement comes up
+            comment: details.comment,
         };
 
         ConfigUpdater::update(config_path, new_repo, chart_config)?;
