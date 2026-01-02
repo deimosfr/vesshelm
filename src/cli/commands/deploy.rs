@@ -181,6 +181,7 @@ async fn deploy_chart(
 
     // Handle local 'values.yaml' interpolation (Implicit default values)
     if !variable_context.is_null()
+        && !chart.no_interpolation
         && chart.repo_name.is_none()
         && let Some(chart_src_path) = &chart.chart_path
     {
@@ -210,19 +211,20 @@ async fn deploy_chart(
     if let Some(files) = &chart.values_files {
         for (i, file_path_str) in files.iter().enumerate() {
             let path = std::path::Path::new(file_path_str);
-            let file_arg = if !variable_context.is_null() && path.exists() {
-                let rendered =
-                    crate::util::variables::render_values_file(path, variable_context)
-                        .with_context(|| format!("Failed to render values file {:?}", path))?;
-                let tmp_path = _rendered_temp_dir.path().join(format!("values-{}.yaml", i));
-                std::fs::write(&tmp_path, rendered)?;
-                tmp_path
-                    .to_str()
-                    .ok_or_else(|| anyhow!("Invalid temp path"))?
-                    .to_string()
-            } else {
-                file_path_str.clone()
-            };
+            let file_arg =
+                if !variable_context.is_null() && !chart.no_interpolation && path.exists() {
+                    let rendered =
+                        crate::util::variables::render_values_file(path, variable_context)
+                            .with_context(|| format!("Failed to render values file {:?}", path))?;
+                    let tmp_path = _rendered_temp_dir.path().join(format!("values-{}.yaml", i));
+                    std::fs::write(&tmp_path, rendered)?;
+                    tmp_path
+                        .to_str()
+                        .ok_or_else(|| anyhow!("Invalid temp path"))?
+                        .to_string()
+                } else {
+                    file_path_str.clone()
+                };
             values_flags.push_str(" -f ");
             values_flags.push_str(&file_arg);
         }
@@ -552,6 +554,7 @@ mod tests {
             helm_args_override: None,
             values: None,
             depends: None,
+            no_interpolation: false,
         };
         let dest = "./charts/my-chart";
         let template =
@@ -582,6 +585,7 @@ mod tests {
             helm_args_override: Some("override".to_string()),
             values: None,
             depends: None,
+            no_interpolation: false,
         };
         let global = VesshelmConfig {
             helm_args: "default".to_string(),
@@ -611,6 +615,7 @@ mod tests {
             helm_args_override: None,
             values: None,
             depends: None,
+            no_interpolation: false,
         };
         let global = VesshelmConfig {
             helm_args: "default".to_string(),

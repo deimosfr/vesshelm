@@ -408,9 +408,11 @@ destinations:
 "#;
     fs::write(&config_path, config_content).unwrap();
 
+    let original_cwd = env::current_dir().unwrap();
     unsafe {
         env::set_var("PATH", &new_path);
     }
+    env::set_current_dir(&temp_dir).unwrap();
 
     let mock = MockInteraction::new(vec![false, true], vec![], vec![0]);
 
@@ -427,6 +429,8 @@ destinations:
                 &config_path,
                 &mock,
             ));
+
+    env::set_current_dir(original_cwd).unwrap();
     unsafe {
         env::set_var("PATH", original_path);
     }
@@ -468,13 +472,17 @@ destinations:
 "#;
     fs::write(&config_path, config_content).unwrap();
 
+    let original_cwd = env::current_dir().unwrap();
     unsafe {
         env::set_var("PATH", &new_path);
     }
+    env::set_current_dir(&temp_dir).unwrap();
 
     let res = tokio::runtime::Runtime::new()
         .unwrap()
         .block_on(vesshelm::cli::commands::add::run(&config_path, &mock));
+
+    env::set_current_dir(original_cwd).unwrap();
     unsafe {
         env::set_var("PATH", original_path);
     }

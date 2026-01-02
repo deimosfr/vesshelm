@@ -300,6 +300,7 @@ mod tests {
             helm_args_override: None,
             values: None,
             depends: None,
+            no_interpolation: false,
         };
 
         let path = resolve_delete_path(&config, &chart).unwrap();
@@ -333,6 +334,7 @@ mod tests {
             helm_args_override: None,
             values: None,
             depends: None,
+            no_interpolation: false,
         };
 
         let path = resolve_delete_path(&config, &chart).unwrap();
@@ -370,6 +372,7 @@ mod tests {
             helm_args_override: None,
             values: None,
             depends: None,
+            no_interpolation: false,
         };
 
         // Default behavior (fallback to join)

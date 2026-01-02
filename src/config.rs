@@ -182,6 +182,8 @@ pub struct Chart {
     pub helm_args_override: Option<String>,
     pub values: Option<Vec<Value>>,
     pub depends: Option<Vec<String>>,
+    #[serde(default)]
+    pub no_interpolation: bool,
 }
 
 #[derive(Debug, Deserialize, Serialize, Validate)]

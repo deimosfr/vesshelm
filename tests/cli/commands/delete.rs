@@ -54,6 +54,7 @@ fn test_delete_chart_no_interactive() {
         helm_args_override: None,
         values: None,
         depends: None,
+        no_interpolation: false,
     };
 
     let config = Config {

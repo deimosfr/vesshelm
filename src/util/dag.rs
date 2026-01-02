@@ -148,6 +148,7 @@ mod tests {
             helm_args_override: None,
             values: None,
             depends,
+            no_interpolation: false,
         }
     }
 

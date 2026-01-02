@@ -302,6 +302,7 @@ mod tests {
                 helm_args_override: None,
                 values: None,
                 depends: None,
+                no_interpolation: false,
             }],
             destinations: vec![Destination {
                 name: "default".to_string(),
@@ -372,6 +373,7 @@ mod tests {
                 helm_args_override: None,
                 values: None,
                 depends: None,
+                no_interpolation: false,
             }],
             destinations: vec![Destination {
                 name: "default".to_string(),

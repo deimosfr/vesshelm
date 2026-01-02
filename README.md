@@ -460,6 +460,7 @@ ingress:
 | `helm_args_override` | string | Completely parameters of the Helm command for this specific chart (ignores global `vesshelm.helm_args`). |
 | `no_sync` | bool | If `true`, skips the sync/download step for this chart. |
 | `no_deploy` | bool | If `true`, skips the deploy step for this chart. |
+| `no_interpolation` | bool | If `true`, disables Jinja2 interpolation for this chart's values files. |
 | `depends` | list | List of chart names that this chart depends on. Controls deployment order. |
 
 ## Contribution

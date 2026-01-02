@@ -924,3 +924,63 @@ vesshelm:
             "Failed to render local values.yaml",
         ));
 }
+
+#[test]
+fn test_deploy_local_chart_skip_interpolation() {
+    let temp = TempDir::new().unwrap();
+    setup_mock_helm_interpolation(&temp);
+
+    // Create variables file
+    let vars_path = temp.path().join("vars.yaml");
+    fs::write(&vars_path, "global_var: injected_value").unwrap();
+
+    // Create local chart structure
+    let chart_dir = temp.path().join("charts").join("skip-int-chart");
+    fs::create_dir_all(&chart_dir).unwrap();
+    fs::write(
+        chart_dir.join("Chart.yaml"),
+        "name: skip-int-chart\nversion: 0.1.0",
+    )
+    .unwrap();
+
+    // value with variable that should NOT be replaced
+    fs::write(chart_dir.join("values.yaml"), "key: {{ global_var }}").unwrap();
+
+    let config_path = temp.path().join("vesshelm.yaml");
+    let config_content = r#"
+repositories: []
+variable_files:
+  - vars.yaml
+charts:
+  - name: skip-int-chart
+    chart_path: charts/skip-int-chart
+    namespace: default
+    no_interpolation: true
+    values_files:
+      - charts/skip-int-chart/values.yaml
+destinations:
+  - name: default
+    path: ./charts
+vesshelm:
+    helm_args: "upgrade"
+"#;
+    fs::write(&config_path, config_content).unwrap();
+
+    let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("vesshelm"));
+    let path_env = std::env::var("PATH").unwrap_or_default();
+    let new_path = format!("{}:{}", temp.path().display(), path_env);
+
+    cmd.current_dir(temp.path())
+        .env("PATH", new_path)
+        .arg("deploy")
+        .arg("--no-interactive")
+        .arg("--no-progress")
+        .arg("--dry-run")
+        .assert()
+        .success()
+        // Verify we see the raw value echoed by mock helm because we didn't interpolate
+        .stdout(predicates::str::contains("--> CONTENT OF"))
+        // It skips the creation of a temporary rendered file and points to the original file?
+        // YES. So it points to the original values.yaml in charts/skip-int-chart/values.yaml
+        .stdout(predicates::str::contains("key: {{ global_var }}"));
+}
