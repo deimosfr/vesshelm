@@ -425,4 +425,9 @@ In `helm.args` and `helm.diff_args`, you can use the following variables:
 
 ## Contribution
 
-Contributions are welcome! Please open an issue or submit a pull request. Use `pre-commit` to run checks before submitting a pull request (`pre-commit run --all-files`).
+Contributions are welcome! Please open an issue or submit a pull request.
+
+`just` is used to manage development tasks:
+- Run tests and checks: `just test` (runs `pre-commit`)
+- Fix linting issues: `just fix`
+- Install locally: `just install`
