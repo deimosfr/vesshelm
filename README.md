@@ -2,7 +2,9 @@
 <img src="logo.png" alt="Vesshelm logo" width="450"/>
 </p>
 
-Vesshelm is a modern, reliable, and user-friendly tool for managing Helm charts, designed as an alternative to  [helmfile](https://github.com/helmfile/helmfile), and [helm-freeze](https://github.com/Qovery/helm-freeze). It simplifies the process of syncing charts from various sources (Helm repositories, Git repositories, OCI registries, and local files) and deploying them with confidence. Everything is local-first and reproducible.
+Vesshelm is a modern, reliable, and user-friendly tool for managing Helm charts in a GitOps way.
+
+Designed as an alternative to  [helmfile](https://github.com/helmfile/helmfile), and [helm-freeze](https://github.com/Qovery/helm-freeze). It simplifies the process of syncing charts from various sources (Helm repositories, Git repositories, OCI registries, and local files) and deploying them with confidence. Everything is local-first and reproducible with a great user experience.
 
 ## Features
 
@@ -12,6 +14,7 @@ Vesshelm is a modern, reliable, and user-friendly tool for managing Helm charts,
 - **Smart Deployments**:
   - **Diff-Aware**: Automatically runs `helm diff` (if enabled) before deploying.
   - **Values Management**: Supports `values_files` and inline `values` override.
+  - **Templating**: Support Jinja2 templating in values files with global variables.
   - **Filtering**: Deploy specific charts with `--only`.
 - **Life-Cycle Management**:
   - **Check Updates**: Easily identify and apply newer chart versions.
@@ -48,7 +51,7 @@ brew install vesshelm
 
 Download the latest binary for your platform from the [Releases page](https://github.com/deimosfr/vesshelm/releases).
 
-> **Note for macOS users**: If you encounter a "System Security" error when running the binary, you may need to clear the quarantine attribute:
+> **Note for macOS users**: You will encounter a "System Security" error when running the binary, you may need to clear the quarantine attribute:
 > ```bash
 > xattr -d com.apple.quarantine /opt/homebrew/bin/vesshelm
 > ```
@@ -323,10 +326,15 @@ destinations:
   - name: custom
     path: ./custom_charts
 
+# Define global variable files for Jinja2 interpolation in values files
+variable_files:
+  - vars/common.yaml
+  - vars/region-{{ env.REGION }}.yaml
+
 # Global Helm settings
-helm:
+vesshelm:
   # Base arguments for helm commands
-  args: "upgrade --install {{ name }} {{ destination }}/{{ name }} -n {{ namespace }} --create-namespace"
+  helm_args: "upgrade --install {{ name }} {{ destination }}/{{ name }} -n {{ namespace }} --create-namespace"
   # Enable diff before deploy
   diff_enabled: true
   # Optional custom diff command
@@ -373,14 +381,45 @@ charts:
 
 ### Variable Interpolation
 
-In `helm.args` and `helm.diff_args`, you can use the following variables:
+In `vesshelm.helm_args` and `vesshelm.diff_args`, you can use the following variables:
 - `{{ name }}`: Chart name
 - `{{ destination }}`: Destination path (e.g., `./charts`)
 - `{{ namespace }}`: Namespace
 - `{{ version }}`: Chart version (empty for local charts)
 - `{{ chart_path }}`: Full path to the chart (handles both remote downloads and local paths)
 
+### Values Files Interpolation
+
+You can use Jinja2 templating in your `values_files`.
+Variables are loaded from files defined in `variable_files` in `vesshelm.yaml`.
+
+Example `vesshelm.yaml`:
+```yaml
+variable_files:
+  - common.yaml
+```
+
+Example `common.yaml`:
+```yaml
+domain: example.com
+region: us-east-1
+```
+
+Example `values.yaml`:
+```yaml
+ingress:
+  host: api.{{ domain }}
+  annotations:
+    region: {{ region }}
+```
+
 ### Configuration Reference
+
+#### Variables Options
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `variable_files` | list | Optional list of paths to YAML files containing global variables for Jinja2 interpolation. |
 
 #### Repository Options
 
@@ -397,11 +436,11 @@ In `helm.args` and `helm.diff_args`, you can use the following variables:
 | `name` | string | **Required**. A unique name for the destination. Used to reference it in charts using `dest`. |
 | `path` | string | **Required**. The local filesystem path where charts will be downloaded. |
 
-#### Global Helm Options (`helm`)
+#### Global Helm Options (`vesshelm`)
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `args` | string | **Required**. Base arguments template for Helm commands (e.g., `upgrade --install ...`). |
+| `helm_args` | string | **Required**. Base arguments template for Helm commands (e.g., `upgrade --install ...`). |
 | `diff_enabled` | bool | Whether to run `helm diff` before deploying. Defaults to `true`. |
 | `diff_args` | string | Optional custom arguments template for the `helm diff` command. |
 
@@ -418,7 +457,7 @@ In `helm.args` and `helm.diff_args`, you can use the following variables:
 | `values_files` | list | List of paths to Helm values files. |
 | `values` | list | Inline values override (list of maps, e.g. `key: value`). |
 | `helm_args_append` | string | Append additional arguments to the Helm command for this specific chart. |
-| `helm_args_override` | string | Completely parameters of the Helm command for this specific chart (ignores global `helm.args`). |
+| `helm_args_override` | string | Completely parameters of the Helm command for this specific chart (ignores global `vesshelm.helm_args`). |
 | `no_sync` | bool | If `true`, skips the sync/download step for this chart. |
 | `no_deploy` | bool | If `true`, skips the deploy step for this chart. |
 | `depends` | list | List of chart names that this chart depends on. Controls deployment order. |

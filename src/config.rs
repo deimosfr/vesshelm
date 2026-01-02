@@ -15,15 +15,15 @@ pub struct Config {
     pub charts: Vec<Chart>,
     #[validate(nested)]
     pub destinations: Vec<Destination>,
-    pub helm: Option<HelmConfig>,
+    pub vesshelm: Option<VesshelmConfig>,
+    pub variable_files: Option<Vec<String>>,
 }
 
 impl Config {
     pub fn load_from_path(path: &Path) -> Result<Self> {
         let content = fs::read_to_string(path)
             .with_context(|| format!("Failed to read configuration file: {:?}", path))?;
-        let config: Config = serde_yaml_ng::from_str(&content)
-            .with_context(|| "Failed to parse configuration file")?;
+        let config: Config = serde_yaml_ng::from_str(&content)?;
 
         // validate config on load
         config
@@ -58,8 +58,8 @@ impl Config {
 }
 
 #[derive(Debug, Deserialize, Serialize, Validate)]
-pub struct HelmConfig {
-    pub args: String,
+pub struct VesshelmConfig {
+    pub helm_args: String,
     #[serde(default = "default_true")]
     pub diff_enabled: bool,
     #[serde(default)]
@@ -80,6 +80,17 @@ fn validate_config(config: &Config) -> Result<(), ValidationError> {
     }
     if dest_names.len() != config.destinations.len() {
         return Err(ValidationError::new("duplicate_destination_names"));
+    }
+
+    // check variable files exist
+    if let Some(files) = &config.variable_files {
+        for file in files {
+            if !std::path::Path::new(file).exists() {
+                let mut err = ValidationError::new("variable_file_not_found");
+                err.add_param(Cow::from("file"), file);
+                return Err(err);
+            }
+        }
     }
 
     // check duplicates charts

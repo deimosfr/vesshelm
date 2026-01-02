@@ -5,3 +5,4 @@ pub mod filter;
 pub mod helm;
 pub mod interaction;
 pub mod progress;
+pub mod variables;

@@ -62,9 +62,7 @@ destinations:
         .arg("validate")
         .assert()
         .failure()
-        .stderr(predicate::str::contains(
-            "Chart references a repository that does not exist",
-        ));
+        .stderr(predicate::str::contains("chart_repo_not_found"));
 }
 
 #[test]
@@ -101,7 +99,7 @@ destinations:
         .arg("validate")
         .assert()
         .failure()
-        .stderr(predicate::str::contains("Duplicate chart detected"));
+        .stderr(predicate::str::contains("duplicate_chart_name_namespace"));
 }
 
 #[test]
@@ -171,5 +169,5 @@ destinations:
         .arg("validate")
         .assert()
         .failure()
-        .stderr(predicate::str::contains("Values file not found"));
+        .stderr(predicate::str::contains("values_file_not_found"));
 }

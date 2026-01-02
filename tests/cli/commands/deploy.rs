@@ -39,8 +39,8 @@ destinations:
   - name: default
     path: ./charts
 
-helm:
-    args: "upgrade --install {{ name }} {{ destination }} -n {{ namespace }}"
+vesshelm:
+    helm_args: "upgrade --install {{ name }} {{ destination }} -n {{ namespace }}"
 "#;
     fs::write(&config_path, config_content).unwrap();
 
@@ -80,8 +80,8 @@ destinations:
   - name: default
     path: ./charts
 
-helm:
-    args: "upgrade --install {{ name }} {{ destination }} -n {{ namespace }}"
+vesshelm:
+    helm_args: "upgrade --install {{ name }} {{ destination }} -n {{ namespace }}"
 "#;
     fs::write(&config_path, config_content).unwrap();
 
@@ -124,8 +124,8 @@ destinations:
   - name: default
     path: ./charts
 
-helm:
-    args: "upgrade --install {{ name }} {{ destination }} -n {{ namespace }}"
+vesshelm:
+    helm_args: "upgrade --install {{ name }} {{ destination }} -n {{ namespace }}"
 "#;
     fs::write(&config_path, config_content).unwrap();
 
@@ -182,8 +182,8 @@ destinations:
   - name: default
     path: ./charts
 
-helm:
-    args: "upgrade --install {{ name }} {{ destination }} -n {{ namespace }}"
+vesshelm:
+    helm_args: "upgrade --install {{ name }} {{ destination }} -n {{ namespace }}"
 
 "#;
     fs::write(&config_path, config_content).unwrap();
@@ -224,8 +224,8 @@ destinations:
   - name: default
     path: ./charts
 
-helm:
-    args: "upgrade --install {{ name }} {{ destination }} -n {{ namespace }}"
+vesshelm:
+    helm_args: "upgrade --install {{ name }} {{ destination }} -n {{ namespace }}"
 
 "#;
     fs::write(&config_path, config_content).unwrap();
@@ -268,8 +268,8 @@ destinations:
   - name: default
     path: ./charts
 
-helm:
-    args: "upgrade --install {{ name }} {{ destination }} -n {{ namespace }}"
+vesshelm:
+    helm_args: "upgrade --install {{ name }} {{ destination }} -n {{ namespace }}"
 
 "#;
     fs::write(&config_path, config_content).unwrap();
@@ -359,8 +359,8 @@ charts:
 destinations:
   - name: default
     path: ./charts
-helm:
-  args: "upgrade"
+vesshelm:
+  helm_args: "upgrade"
 "#;
     fs::write(&config_path, config_content).unwrap();
 
@@ -397,8 +397,8 @@ charts:
 destinations:
   - name: default
     path: ./charts
-helm:
-  args: "upgrade"
+vesshelm:
+  helm_args: "upgrade"
 "#;
     fs::write(&config_path, config_content).unwrap();
 
@@ -450,8 +450,8 @@ destinations:
   - name: default
     path: ./charts
 
-helm:
-    args: "upgrade"
+vesshelm:
+    helm_args: "upgrade"
     diff_enabled: false
 "#;
     fs::write(&config_path, config_content).unwrap();
@@ -490,8 +490,8 @@ destinations:
   - name: default
     path: ./charts
 
-helm:
-    args: "upgrade"
+vesshelm:
+    helm_args: "upgrade"
     diff_enabled: true
     diff_args: "diff custom args"
 "#;
@@ -538,8 +538,8 @@ destinations:
   - name: default
     path: ./charts
 
-helm:
-    args: "upgrade"
+vesshelm:
+    helm_args: "upgrade"
 "#;
     fs::write(&config_path, config_content).unwrap();
 
@@ -577,8 +577,8 @@ destinations:
   - name: default
     path: ./charts
 
-helm:
-    args: "upgrade"
+vesshelm:
+    helm_args: "upgrade"
 "#;
     fs::write(&config_path, config_content).unwrap();
 
@@ -633,8 +633,8 @@ destinations:
   - name: default
     path: ./charts
 
-helm:
-    args: "upgrade {{ name }}"
+vesshelm:
+    helm_args: "upgrade {{ name }}"
 "#;
     fs::write(&config_path, config_content).unwrap();
 
@@ -696,8 +696,8 @@ destinations:
   - name: default
     path: ./charts
 
-helm:
-    args: "upgrade"
+vesshelm:
+    helm_args: "upgrade"
 "#;
     fs::write(&config_path, config_content).unwrap();
 
@@ -736,8 +736,8 @@ destinations:
   - name: default
     path: ./charts
 
-helm:
-    args: "upgrade --install"
+vesshelm:
+    helm_args: "upgrade --install"
 "#;
     fs::write(&config_path, config_content).unwrap();
 
@@ -774,8 +774,8 @@ destinations:
   - name: default
     path: ./charts
 
-helm:
-    args: "upgrade"
+vesshelm:
+    helm_args: "upgrade"
 "#;
     fs::write(&config_path, config_content).unwrap();
 
@@ -790,5 +790,137 @@ helm:
         .success()
         .stdout(predicates::str::contains(
             "Mock Helm called with: upgrade --take-ownership",
+        ));
+}
+
+fn setup_mock_helm_interpolation(temp_dir: &TempDir) {
+    let mock_helm_path = temp_dir.path().join("helm");
+    let mock_helm_content = r#"#!/bin/sh
+# Echo all args
+echo "Mock Helm called with: $@"
+
+# Loop to find -f and cat them
+prev=""
+for arg in "$@"; do
+    if [ "$prev" = "-f" ]; then
+        echo "--> CONTENT OF $arg:"
+        cat "$arg"
+    fi
+    prev="$arg"
+done
+
+if [ "$1" = "diff" ]; then
+    exit 0
+fi
+"#;
+    fs::write(&mock_helm_path, mock_helm_content).unwrap();
+    let mut perms = fs::metadata(&mock_helm_path).unwrap().permissions();
+    perms.set_mode(0o755);
+    fs::set_permissions(&mock_helm_path, perms).unwrap();
+}
+
+#[test]
+fn test_deploy_local_chart_interpolation() {
+    let temp = TempDir::new().unwrap();
+    setup_mock_helm_interpolation(&temp);
+
+    // Create variables file
+    let vars_path = temp.path().join("vars.yaml");
+    fs::write(&vars_path, "global_var: injected_value").unwrap();
+
+    // Create local chart structure
+    let chart_dir = temp.path().join("charts").join("local-chart");
+    fs::create_dir_all(&chart_dir).unwrap();
+    fs::write(
+        chart_dir.join("Chart.yaml"),
+        "name: local-chart\nversion: 0.1.0",
+    )
+    .unwrap();
+
+    // value with variable
+    fs::write(chart_dir.join("values.yaml"), "key: {{ global_var }}").unwrap();
+
+    let config_path = temp.path().join("vesshelm.yaml");
+    let config_content = r#"
+repositories: []
+variable_files:
+  - vars.yaml
+charts:
+  - name: local-chart
+    chart_path: charts/local-chart
+    namespace: default
+destinations:
+  - name: default
+    path: ./charts
+vesshelm:
+    helm_args: "upgrade"
+"#;
+    fs::write(&config_path, config_content).unwrap();
+
+    let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("vesshelm"));
+    let path_env = std::env::var("PATH").unwrap_or_default();
+    let new_path = format!("{}:{}", temp.path().display(), path_env);
+
+    cmd.current_dir(temp.path())
+        .env("PATH", new_path)
+        .arg("deploy")
+        .arg("--no-interactive")
+        .arg("--no-progress")
+        .arg("--dry-run")
+        .assert()
+        .success()
+        // Verify we see the injected value echoed by mock helm
+        .stdout(predicates::str::contains("--> CONTENT OF"))
+        .stdout(predicates::str::contains("key: injected_value"));
+}
+
+#[test]
+fn test_deploy_missing_variable_error() {
+    let temp = TempDir::new().unwrap();
+    setup_mock_helm_simple(&temp);
+
+    // Create variables file (empty or unrelated)
+    let vars_path = temp.path().join("vars.yaml");
+    fs::write(&vars_path, "other: val").unwrap();
+
+    // Create local chart structure
+    let chart_dir = temp.path().join("charts").join("bad-chart");
+    fs::create_dir_all(&chart_dir).unwrap();
+    fs::write(
+        chart_dir.join("Chart.yaml"),
+        "name: bad-chart\nversion: 0.1.0",
+    )
+    .unwrap();
+
+    // value with missing variable
+    fs::write(chart_dir.join("values.yaml"), "key: {{ missing_var }}").unwrap();
+
+    let config_path = temp.path().join("vesshelm.yaml");
+    let config_content = r#"
+repositories: []
+variable_files:
+  - vars.yaml
+charts:
+  - name: bad-chart
+    chart_path: charts/bad-chart
+    namespace: default
+destinations:
+  - name: default
+    path: ./charts
+vesshelm:
+    helm_args: "upgrade"
+"#;
+    fs::write(&config_path, config_content).unwrap();
+
+    let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("vesshelm"));
+    cmd.current_dir(temp.path())
+        .env("PATH", temp.path())
+        .arg("deploy")
+        .arg("--no-interactive")
+        .arg("--no-progress")
+        .assert()
+        .failure()
+        .stdout(predicates::str::contains(
+            "Failed to render local values.yaml",
         ));
 }

@@ -1,13 +1,13 @@
-use crate::config::{Chart, Config, Destination, HelmConfig};
+use std::process::Stdio;
+
+use crate::config::{Chart, Config, Destination, VesshelmConfig};
 use crate::util::progress::ProgressTracker;
 use crate::util::{dag, filter};
 use anyhow::{Context, Result, anyhow};
 use colored::*;
 use console::style;
 use dialoguer::Confirm;
-use std::io::Write;
-use std::process::Stdio;
-use tempfile::NamedTempFile;
+
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
 
@@ -18,15 +18,24 @@ pub async fn run(args: DeployArgs, no_progress: bool, config_path: &std::path::P
     let config = Config::load_from_path(config_path)?;
 
     // Check if helm config is present
-    let helm_config = match &config.helm {
+    let helm_config = match &config.vesshelm {
         Some(h) => h,
         None => {
             eprintln!(
-                "{} No helm configuration found in vesshelm.yaml. Skipping deployment.",
+                "{} No vesshelm configuration found in vesshelm.yaml. Skipping deployment.",
                 "⚠️".yellow()
             );
             return Ok(());
         }
+    };
+
+    // Load variables
+    let variable_context = if let Some(variable_files) = &config.variable_files {
+        let base_path = config_path.parent().unwrap_or(std::path::Path::new("."));
+        crate::util::variables::load_variables(variable_files, base_path)
+            .context("Failed to load variables")?
+    } else {
+        serde_yaml_ng::Value::Null
     };
 
     println!("{} 🚀 Starting deployment...", style("==>").bold().green());
@@ -72,6 +81,7 @@ pub async fn run(args: DeployArgs, no_progress: bool, config_path: &std::path::P
                 no_interactive: args.no_interactive,
                 force: args.force,
                 take_ownership: args.take_ownership,
+                variable_context: &variable_context,
             },
             &tracker,
         )
@@ -125,11 +135,12 @@ enum DeployStatus {
 
 struct DeployOptions<'a> {
     destinations: &'a [Destination],
-    global_helm_config: &'a HelmConfig,
+    global_helm_config: &'a VesshelmConfig,
     dry_run: bool,
     no_interactive: bool,
     force: bool,
     take_ownership: bool,
+    variable_context: &'a serde_yaml_ng::Value,
 }
 
 // Removed allow(clippy::too_many_arguments)
@@ -145,6 +156,7 @@ async fn deploy_chart(
         no_interactive,
         force,
         take_ownership,
+        variable_context,
     } = options;
 
     tracker.set_message(format!("Deploying {}...", chart.name));
@@ -161,30 +173,68 @@ async fn deploy_chart(
 
     // Prepare values flags
     let mut values_flags = String::new();
+    // Use TempDir to persist files until the end of the deployment function (Drop cleans up)
+    let _rendered_temp_dir = tempfile::Builder::new()
+        .prefix("vesshelm-values-")
+        .tempdir()
+        .context("Failed to create temporary directory for values files")?;
 
-    // Handle values_files
+    // Handle local 'values.yaml' interpolation (Implicit default values)
+    if !variable_context.is_null()
+        && chart.repo_name.is_none()
+        && let Some(chart_src_path) = &chart.chart_path
+    {
+        let values_path = std::path::Path::new(chart_src_path).join("values.yaml");
+        if values_path.exists() {
+            match crate::util::variables::render_values_file(&values_path, variable_context) {
+                Ok(rendered) => {
+                    let tmp_path = _rendered_temp_dir.path().join("local-values.yaml");
+                    if let Err(e) = std::fs::write(&tmp_path, rendered) {
+                        tracker.println(&format!(
+                            "{} Failed to write temp values: {}",
+                            "⚠️ ".yellow(),
+                            e
+                        ));
+                    } else if let Some(path_str) = tmp_path.to_str() {
+                        values_flags.push_str(" -f ");
+                        values_flags.push_str(path_str);
+                    }
+                }
+                Err(e) => {
+                    return Err(anyhow::anyhow!("Failed to render local values.yaml: {}", e));
+                }
+            }
+        }
+    }
+
     if let Some(files) = &chart.values_files {
-        for file in files {
+        for (i, file_path_str) in files.iter().enumerate() {
+            let path = std::path::Path::new(file_path_str);
+            let file_arg = if !variable_context.is_null() && path.exists() {
+                let rendered =
+                    crate::util::variables::render_values_file(path, variable_context)
+                        .with_context(|| format!("Failed to render values file {:?}", path))?;
+                let tmp_path = _rendered_temp_dir.path().join(format!("values-{}.yaml", i));
+                std::fs::write(&tmp_path, rendered)?;
+                tmp_path
+                    .to_str()
+                    .ok_or_else(|| anyhow!("Invalid temp path"))?
+                    .to_string()
+            } else {
+                file_path_str.clone()
+            };
             values_flags.push_str(" -f ");
-            values_flags.push_str(file);
+            values_flags.push_str(&file_arg);
         }
     }
 
     // Handle inline values
-    let _values_temp_file: Option<NamedTempFile>; // Keep alive until function end
     if let Some(values) = &chart.values {
         let content = crate::util::helm::merge_values(values)?;
-        let mut file = tempfile::Builder::new().suffix(".yaml").tempfile()?;
-        write!(file, "{}", content)?;
+        let tmp_path = _rendered_temp_dir.path().join("inline-values.yaml");
+        std::fs::write(&tmp_path, content)?;
         values_flags.push_str(" -f ");
-        values_flags.push_str(
-            file.path()
-                .to_str()
-                .ok_or_else(|| anyhow!("Invalid path for value file"))?,
-        );
-        _values_temp_file = Some(file);
-    } else {
-        _values_temp_file = None;
+        values_flags.push_str(tmp_path.to_str().ok_or_else(|| anyhow!("Invalid path"))?);
     }
 
     // Append values to args
@@ -299,12 +349,12 @@ fn get_destination_path(
     ))
 }
 
-fn construct_helm_args(chart: &Chart, global_helm_config: &HelmConfig) -> Result<String> {
+fn construct_helm_args(chart: &Chart, global_helm_config: &VesshelmConfig) -> Result<String> {
     if let Some(override_args) = &chart.helm_args_override {
         return Ok(override_args.clone());
     }
 
-    let mut args = global_helm_config.args.clone();
+    let mut args = global_helm_config.helm_args.clone();
 
     if let Some(append_args) = &chart.helm_args_append {
         args.push(' ');
@@ -483,7 +533,7 @@ async fn terminate_process(child: &mut tokio::process::Child, _pid: u32) -> Resu
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::config::{Chart, HelmConfig};
+    use crate::config::{Chart, VesshelmConfig};
 
     #[test]
     fn test_interpolate_variables() -> Result<()> {
@@ -533,8 +583,8 @@ mod tests {
             values: None,
             depends: None,
         };
-        let global = HelmConfig {
-            args: "default".to_string(),
+        let global = VesshelmConfig {
+            helm_args: "default".to_string(),
             diff_enabled: false,
             diff_args: None,
         };
@@ -562,8 +612,8 @@ mod tests {
             values: None,
             depends: None,
         };
-        let global = HelmConfig {
-            args: "default".to_string(),
+        let global = VesshelmConfig {
+            helm_args: "default".to_string(),
             diff_enabled: false,
             diff_args: None,
         };

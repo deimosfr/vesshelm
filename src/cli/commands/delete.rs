@@ -282,7 +282,8 @@ mod tests {
                 name: "default".to_string(),
                 path: "charts".to_string(),
             }],
-            helm: None,
+            vesshelm: None,
+            variable_files: None,
         };
         let chart = Chart {
             name: "nginx".to_string(),
@@ -314,7 +315,8 @@ mod tests {
                 name: "default".to_string(),
                 path: "charts".to_string(),
             }],
-            helm: None,
+            vesshelm: None,
+            variable_files: None,
         };
         let chart = Chart {
             name: "my-local".to_string(),
@@ -350,7 +352,8 @@ mod tests {
                 name: "default".to_string(),
                 path: "charts".to_string(),
             }],
-            helm: None,
+            vesshelm: None,
+            variable_files: None,
         };
         let chart = Chart {
             name: "nginx".to_string(),
