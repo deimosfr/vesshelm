@@ -16,7 +16,7 @@ pub fn merge_values(values: &[Value]) -> Result<String> {
     Ok(yaml_string)
 }
 
-fn merge_yaml_values(a: &mut Value, b: &Value) -> Result<()> {
+pub fn merge_yaml_values(a: &mut Value, b: &Value) -> Result<()> {
     match (a, b) {
         (Value::Mapping(a_map), Value::Mapping(b_map)) => {
             for (key, value) in b_map {

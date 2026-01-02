@@ -309,7 +309,8 @@ mod tests {
                 path: "./target/test-charts".to_string(),
             }],
             vesshelm: None,
-            variable_files: None,
+            variables_files: None,
+            secrets_files: None,
         };
 
         let mut lockfile = Lockfile::default();
@@ -380,7 +381,8 @@ mod tests {
                 path: "./target/test-charts".to_string(),
             }],
             vesshelm: None,
-            variable_files: None,
+            variables_files: None,
+            secrets_files: None,
         };
 
         let mut lockfile = Lockfile::default();

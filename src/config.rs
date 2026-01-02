@@ -16,7 +16,10 @@ pub struct Config {
     #[validate(nested)]
     pub destinations: Vec<Destination>,
     pub vesshelm: Option<VesshelmConfig>,
-    pub variable_files: Option<Vec<String>>,
+    #[serde(alias = "variable_files")]
+    pub variables_files: Option<Vec<String>>,
+    #[serde(alias = "secret_files")]
+    pub secrets_files: Option<Vec<String>>,
 }
 
 impl Config {
@@ -83,10 +86,21 @@ fn validate_config(config: &Config) -> Result<(), ValidationError> {
     }
 
     // check variable files exist
-    if let Some(files) = &config.variable_files {
+    if let Some(files) = &config.variables_files {
         for file in files {
             if !std::path::Path::new(file).exists() {
                 let mut err = ValidationError::new("variable_file_not_found");
+                err.add_param(Cow::from("file"), file);
+                return Err(err);
+            }
+        }
+    }
+
+    // check secrets files exist
+    if let Some(files) = &config.secrets_files {
+        for file in files {
+            if !std::path::Path::new(file).exists() {
+                let mut err = ValidationError::new("secrets_file_not_found");
                 err.add_param(Cow::from("file"), file);
                 return Err(err);
             }

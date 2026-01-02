@@ -39,6 +39,9 @@ vesshelm:
   diff_enabled: true
   diff_args: "diff upgrade --suppress-secrets --allow-unreleased {{ name }} {{ destination }} -n {{ namespace }}"
 
+variables_files: []
+secrets_files: []
+
 repositories:
   - name: stable
     url: https://charts.helm.sh/stable

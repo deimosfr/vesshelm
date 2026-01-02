@@ -10,7 +10,8 @@ fn test_delete_non_existent_chart() {
 
     // Create minimal config
     let config = Config {
-        variable_files: None,
+        variables_files: None,
+        secrets_files: None,
         repositories: vec![],
         charts: vec![],
         destinations: vec![],
@@ -69,7 +70,8 @@ fn test_delete_chart_no_interactive() {
             path: "charts".to_string(),
         }],
         vesshelm: None,
-        variable_files: None,
+        variables_files: None,
+        secrets_files: None,
     };
 
     let yaml = serde_yaml_ng::to_string(&config).unwrap();

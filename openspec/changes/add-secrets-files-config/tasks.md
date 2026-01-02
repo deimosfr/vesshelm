@@ -1,0 +1,12 @@
+- [x] Update `Config` struct in `src/config.rs` to include `secrets_files`
+- [x] Update `validate_config` in `src/config.rs` to validate `secrets_files` existence
+- [x] Update `src/cli/commands/deploy.rs` to include `secrets_files` when loading variables
+- [x] Add unit tests for `secrets_files` config parsing and validation
+- [x] Verify integration: secrets from `secrets_files` should be available in chart rendering
+- [x] Update `proposal.md` to include interpolation requirement
+- [x] Update `design.md` to specify interpolation strategy
+- [x] Update `spec.md` to add variable interpolation requirement
+- [x] Implement interpolation in `load_variables`
+- [x] Verify using `test_load_variables_interpolation`
+- [x] Implement `secret_files` alias compatibility in `src/config.rs`
+- [x] Verify alias support using `repro_secrets_alias` test

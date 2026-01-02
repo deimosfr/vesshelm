@@ -30,10 +30,19 @@ pub async fn run(args: DeployArgs, no_progress: bool, config_path: &std::path::P
     };
 
     // Load variables
-    let variable_context = if let Some(variable_files) = &config.variable_files {
+    // Load variables and secrets
+    let mut all_variable_files = Vec::new();
+    if let Some(files) = &config.variables_files {
+        all_variable_files.extend(files.clone());
+    }
+    if let Some(files) = &config.secrets_files {
+        all_variable_files.extend(files.clone());
+    }
+
+    let variable_context = if !all_variable_files.is_empty() {
         let base_path = config_path.parent().unwrap_or(std::path::Path::new("."));
-        crate::util::variables::load_variables(variable_files, base_path)
-            .context("Failed to load variables")?
+        crate::util::variables::load_variables(&all_variable_files, base_path)
+            .context("Failed to load variables/secrets")?
     } else {
         serde_yaml_ng::Value::Null
     };
@@ -99,7 +108,7 @@ pub async fn run(args: DeployArgs, no_progress: bool, config_path: &std::path::P
             Err(e) => {
                 failed_count += 1;
                 tracker.println(&format!(
-                    " {} {} {}: {}",
+                    " {} {} {}: {:#}",
                     style("[Fail]").red(),
                     "✗", // CROSS emoji not imported here locally properly, using string
                     chart.name,

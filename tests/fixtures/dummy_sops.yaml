@@ -1,0 +1,5 @@
+secrets:
+    api_key: ENC[AES256_GCM,data:supersecret,iv:...,tag:...]
+sops:
+    mac: ENC[AES256_GCM,data:...]
+    version: 3.7.1

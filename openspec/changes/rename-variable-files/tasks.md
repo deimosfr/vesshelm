@@ -1,0 +1,5 @@
+- [x] Rename `variable_files` to `variables_files` in `src/config.rs` and add alias
+- [x] Update `validate_config` in `src/config.rs`
+- [x] Update usages in `src/cli/commands/deploy.rs` and other commands
+- [x] Verify backward compatibility with a test case (alias `variable_files`)
+- [x] Verify new name with a test case (`variables_files`)

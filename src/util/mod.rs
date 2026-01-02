@@ -1,5 +1,6 @@
 pub mod config_updater;
 pub mod dag;
+pub mod encryption;
 pub mod error;
 pub mod filter;
 pub mod helm;
