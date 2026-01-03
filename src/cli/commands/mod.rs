@@ -79,8 +79,7 @@ pub struct SyncArgs {
 #[derive(Args, Clone, Debug)]
 pub struct UninstallArgs {
     /// The name of the chart to uninstall
-    #[arg(required = true)]
-    pub name: String,
+    pub name: Option<String>,
 
     /// Skip interactive confirmation
     #[clap(long)]

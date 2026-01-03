@@ -3,6 +3,8 @@
 - [x] Define spec delta for `uninstall` command <!-- id: 0 -->
     - [x] Create `openspec/changes/uninstall-chart-command/specs/cli-commands/spec.md` <!-- id: 1 -->
 - [x] Implement `uninstall` command <!-- id: 2 -->
+    - [x] Implement interactive selection when no name is provided <!-- id: 13 -->
+    - [x] Fix ANSI escape code artifact in selection output <!-- id: 14 -->
     - [x] Create `src/cli/commands/uninstall.rs` with `run` function <!-- id: 3 -->
     - [x] Update `src/cli/commands/mod.rs` to export `uninstall` module <!-- id: 4 -->
     - [x] Update `src/main.rs` to add `Uninstall` enum variant to `Commands` and handle dispatch <!-- id: 5 -->

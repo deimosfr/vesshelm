@@ -21,7 +21,14 @@ async fn main() {
                 commands::deploy::run(args.clone(), cli.no_progress, config_path).await
             }
             Commands::Graph => commands::graph::run(config_path).await,
-            Commands::Uninstall(args) => commands::uninstall::run(args.clone(), config_path).await,
+            Commands::Uninstall(args) => {
+                commands::uninstall::run(
+                    args.clone(),
+                    config_path,
+                    &vesshelm::util::interaction::TerminalInteraction,
+                )
+                .await
+            }
             Commands::CheckUpdates(args) => {
                 commands::check_updates::run(args.clone(), cli.no_progress, config_path).await
             }

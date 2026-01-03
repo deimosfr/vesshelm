@@ -1,25 +1,49 @@
+use crate::cli::commands::UninstallArgs;
 use anyhow::{Context, Result, anyhow};
 // use colored::*; // Unused
 use crate::clients::{HelmClient, helm::RealHelmClient};
 use crate::config::Config;
+use crate::util::interaction::UserInteraction;
 use console::style;
-use dialoguer::Confirm;
 
-use super::UninstallArgs;
-
-pub async fn run(args: UninstallArgs, config_path: &std::path::Path) -> Result<()> {
-    let name = args.name;
-    println!("Uninstalling {}...", name);
+pub async fn run(
+    args: UninstallArgs,
+    config_path: &std::path::Path,
+    interaction: &impl UserInteraction,
+) -> Result<()> {
+    println!("{} Uninstalling chart...\n", style("==>").bold().green());
 
     // Load configuration
     let config = Config::load_from_path(config_path)?;
 
-    // Find chart
-    let chart = config
-        .charts
-        .iter()
-        .find(|c| c.name == name)
-        .ok_or_else(|| anyhow!("Chart '{}' not found in vesshelm.yaml", name))?;
+    // Select Chart
+    let chart = if let Some(name) = args.name {
+        config
+            .charts
+            .iter()
+            .find(|c| c.name == name)
+            .ok_or_else(|| anyhow!("Chart '{}' not found in vesshelm.yaml", name))?
+    } else {
+        // Interactive selection
+        if config.charts.is_empty() {
+            println!("No charts found in configuration.");
+            return Ok(());
+        }
+
+        let mut sorted_charts: Vec<_> = config.charts.iter().collect();
+        sorted_charts.sort_by(|a, b| a.name.cmp(&b.name));
+
+        let items: Vec<String> = sorted_charts
+            .iter()
+            .map(|c| format!("{} ({})", c.name, c.namespace))
+            .collect();
+
+        let selection = interaction
+            .fuzzy_select("Select chart to uninstall", &items, 0)
+            .context("Failed to read selection")?;
+
+        sorted_charts[selection]
+    };
 
     // Check for dependents
     let dependents = crate::util::dag::get_dependents(&config.charts, &chart.name)
@@ -55,10 +79,8 @@ pub async fn run(args: UninstallArgs, config_path: &std::path::Path) -> Result<(
     let confirmation = if args.no_interactive {
         true
     } else {
-        Confirm::new()
-            .with_prompt("Do you want to continue?")
-            .default(false)
-            .interact()
+        interaction
+            .confirm("Do you want to continue?", false)
             .context("Failed to read user confirmation")?
     };
 
