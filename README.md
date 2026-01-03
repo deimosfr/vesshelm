@@ -224,6 +224,7 @@ vesshelm check-updates --only my-chart
 vesshelm check-updates --apply
 
 # Update and sync immediately
+# Update and sync immediately
 vesshelm check-updates --apply-sync
 ```
 
@@ -331,6 +332,12 @@ variable_files:
   - vars/common.yaml
   - vars/region-{{ env.REGION }}.yaml
 
+# Define secrets files for SOPS integration
+# Encrypted files will be automatically decrypted before use
+secrets_files:
+  - secrets.yaml
+  - secrets/{{ env.ENV }}.yaml
+
 # Global Helm settings
 vesshelm:
   # Base arguments for helm commands
@@ -339,6 +346,8 @@ vesshelm:
   diff_enabled: true
   # Optional custom diff command
   diff_args: "diff upgrade --suppress-secrets --allow-unreleased {{ name }} {{ destination }} -n {{ namespace }}"
+  # Pause deployment on error for debugging (interactive mode only). Defaults to true.
+  deploy_debug_pause: true
 
 charts:
   # 1. Standard Helm Repo Chart
@@ -379,7 +388,7 @@ charts:
       - my-internal-service       # Will ensure 'my-internal-service' is deployed first
 ```
 
-### Variable Interpolation
+### Vesshelm configuration variable interpolation
 
 In `vesshelm.helm_args` and `vesshelm.diff_args`, you can use the following variables:
 - `{{ name }}`: Chart name
@@ -436,6 +445,12 @@ ingress:
 | `name` | string | **Required**. A unique name for the destination. Used to reference it in charts using `dest`. |
 | `path` | string | **Required**. The local filesystem path where charts will be downloaded. |
 
+#### Secrets Options
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `secrets_files` | list | Optional list of paths to SOPS-encrypted YAML files. |
+
 #### Global Helm Options (`vesshelm`)
 
 | Field | Type | Description |
@@ -443,6 +458,7 @@ ingress:
 | `helm_args` | string | **Required**. Base arguments template for Helm commands (e.g., `upgrade --install ...`). |
 | `diff_enabled` | bool | Whether to run `helm diff` before deploying. Defaults to `true`. |
 | `diff_args` | string | Optional custom arguments template for the `helm diff` command. |
+| `deploy_debug_pause` | bool | Whether to pause on deployment error for debugging (interactive mode only). Defaults to `true`. |
 
 #### Chart Options
 

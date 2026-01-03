@@ -545,4 +545,46 @@ charts:
         assert!(res.contains("# Misc"));
         assert!(res.contains("name: chart2"));
     }
+
+    #[test]
+    fn test_remove_chart_io() {
+        use std::io::Write;
+        use tempfile::NamedTempFile;
+
+        let mut temp = NamedTempFile::new().unwrap();
+        let content = r#"charts:
+  - name: to-remove
+    namespace: default
+  - name: keep
+    namespace: default
+"#;
+        temp.write_all(content.as_bytes()).unwrap();
+
+        ConfigUpdater::remove_chart(temp.path(), "to-remove", "default").unwrap();
+
+        let new_content = std::fs::read_to_string(temp.path()).unwrap();
+        assert!(!new_content.contains("name: to-remove"));
+        assert!(new_content.contains("name: keep"));
+    }
+
+    #[test]
+    fn test_remove_repository_io() {
+        use std::io::Write;
+        use tempfile::NamedTempFile;
+
+        let mut temp = NamedTempFile::new().unwrap();
+        let content = r#"repositories:
+  - name: repo-remove
+    url: http://foo.bar
+  - name: repo-keep
+    url: http://keep.me
+"#;
+        temp.write_all(content.as_bytes()).unwrap();
+
+        ConfigUpdater::remove_repository(temp.path(), "repo-remove").unwrap();
+
+        let new_content = std::fs::read_to_string(temp.path()).unwrap();
+        assert!(!new_content.contains("name: repo-remove"));
+        assert!(new_content.contains("name: repo-keep"));
+    }
 }

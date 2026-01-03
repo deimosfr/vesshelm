@@ -163,3 +163,199 @@ pub async fn run(config_path: &Path, interaction: &(impl UserInteraction + Sync)
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::util::interaction::UserInteraction;
+    use anyhow::Result;
+    use std::sync::{Arc, Mutex};
+    use tempfile::NamedTempFile;
+
+    // Manual Mock because mockall might be heavy to setup inline or requires traits to be visible
+    #[derive(Default, Clone)]
+    struct MockInteraction {
+        inputs: Arc<Mutex<Vec<String>>>,
+        selects: Arc<Mutex<Vec<usize>>>,
+        confirms: Arc<Mutex<Vec<bool>>>,
+    }
+
+    impl MockInteraction {
+        fn new() -> Self {
+            Self::default()
+        }
+
+        fn push_input(&self, val: &str) {
+            self.inputs.lock().unwrap().push(val.to_string());
+        }
+
+        fn push_select(&self, val: usize) {
+            self.selects.lock().unwrap().push(val);
+        }
+
+        fn push_confirm(&self, val: bool) {
+            self.confirms.lock().unwrap().push(val);
+        }
+    }
+
+    impl UserInteraction for MockInteraction {
+        fn confirm(&self, _prompt: &str, _default: bool) -> Result<bool> {
+            let mut confirms = self.confirms.lock().unwrap();
+            if !confirms.is_empty() {
+                Ok(confirms.remove(0))
+            } else {
+                Ok(true) // Default
+            }
+        }
+
+        fn input(&self, _prompt: &str, _default: Option<&str>) -> Result<String> {
+            let mut inputs = self.inputs.lock().unwrap();
+            if !inputs.is_empty() {
+                Ok(inputs.remove(0))
+            } else {
+                Ok("default_input".to_string())
+            }
+        }
+
+        fn select(&self, _prompt: &str, _items: &[String], _default: usize) -> Result<usize> {
+            let mut selects = self.selects.lock().unwrap();
+            if !selects.is_empty() {
+                Ok(selects.remove(0))
+            } else {
+                Ok(0)
+            }
+        }
+
+        fn fuzzy_select(&self, _prompt: &str, _items: &[String], _default: usize) -> Result<usize> {
+            Ok(0)
+        }
+    }
+
+    #[tokio::test]
+    async fn test_add_command_git_flow_new_repo() -> Result<()> {
+        let interaction = MockInteraction::new();
+
+        // 1. Source Selection: "Git" is index 1
+        interaction.push_select(1);
+
+        // 2. Git Details Inputs (FIFO order of popping, so push in REVERSE or implement queue correctly)
+        // Implementation uses remove(0), so we push in ORDER.
+
+        // GitSource inputs:
+        interaction.push_input("https://github.com/org/repo.git"); // URL
+        interaction.push_input("charts/my-chart"); // Path
+        interaction.push_input("v1.0.0"); // Version
+
+        // 3. Config Logic
+        // "Repository ... not found" -> ask for name
+        interaction.push_input("my-git-repo"); // New Repository Name
+
+        // Chart Name
+        interaction.push_input("my-chart");
+
+        // Namespace Selection
+        // Assuming empty config, it asks for input directly
+        interaction.push_input("my-ns");
+
+        // Summary Confirmations
+        interaction.push_confirm(true); // Add to config?
+        interaction.push_confirm(false); // Run sync now? (Skip to avoid running actual sync commands)
+
+        // Setup Config
+        let config_file = NamedTempFile::new()?;
+        let initial_config = r#"
+repositories:
+charts:
+destinations:
+"#;
+        std::fs::write(&config_file, initial_config)?;
+
+        run(config_file.path(), &interaction).await?;
+
+        // Verify content
+        let config = Config::load_from_path(config_file.path())?;
+
+        assert_eq!(config.repositories.len(), 1);
+        assert_eq!(config.repositories[0].name, "my-git-repo");
+        assert_eq!(
+            config.repositories[0].url,
+            "https://github.com/org/repo.git"
+        );
+
+        assert_eq!(config.charts.len(), 1);
+        assert_eq!(config.charts[0].name, "my-chart");
+        assert_eq!(config.charts[0].repo_name, Some("my-git-repo".to_string()));
+        assert_eq!(config.charts[0].version, Some("v1.0.0".to_string()));
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_add_command_collision_check() -> Result<()> {
+        let interaction = MockInteraction::new();
+
+        // 1. Source Selection: "Git"
+        interaction.push_select(1);
+
+        // 2. Git inputs
+        interaction.push_input("https://github.com/org/repo.git");
+        interaction.push_input("charts/collision");
+        interaction.push_input("v2.0.0");
+
+        // 3. Config Logic
+        // Repo exists check logic.
+        // If we use the same URL, it matches the existing repo.
+        // But our inputs above set URL to "https://github.com/org/repo.git".
+        // The existing repo "repo-collision" below uses that URL.
+        // So prompt finding existing repo happens!
+        // "Repository URL ... already exists as 'repo-collision'"
+        // It does NOT ask for repo name.
+
+        // Chart Name
+        interaction.push_input("collision-chart");
+
+        // Namespace
+        interaction.push_input("default");
+
+        // COLLISION CHECK:
+        // We will prep config to already have this chart.
+        // It should ask "Continue duplicated?"
+        interaction.push_confirm(true);
+
+        // Add to config?
+        interaction.push_confirm(true);
+        // Sync?
+        interaction.push_confirm(false);
+
+        // Setup Pre-existing Config
+        let config_file = NamedTempFile::new()?;
+        let initial_config = r#"
+repositories:
+  - name: repo-collision
+    url: https://github.com/org/repo.git
+    type: git
+charts:
+  - name: collision-chart
+    namespace: default
+    repo_name: repo-collision
+    version: v1.0.0
+destinations:
+"#;
+        std::fs::write(&config_file, initial_config)?;
+
+        run(config_file.path(), &interaction).await?;
+
+        // Verify we added a SECOND chart
+
+        // Use raw load because Config::load_from_path validates, and we intentionally have a duplicate
+        let content = std::fs::read_to_string(config_file.path())?;
+        let config: Config = serde_yaml_ng::from_str(&content)?;
+        // We expect 2 charts now.
+        assert_eq!(config.charts.len(), 2);
+        // ConfigUpdater prepends new charts, so the new one is at index 0
+        assert_eq!(config.charts[0].version, Some("v2.0.0".to_string()));
+        assert_eq!(config.charts[1].version, Some("v1.0.0".to_string()));
+
+        Ok(())
+    }
+}

@@ -1,0 +1,3 @@
+- [ ] Implement `deploy_debug_pause` config option in `VesshelmConfig`
+- [ ] Update `deploy` command to pause on error if configured and interactive
+- [ ] Verify behavior locally with a failing chart

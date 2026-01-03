@@ -143,3 +143,102 @@ fn format_field_error(field: &str, error: &validator::ValidationError) -> String
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use validator::{ValidationError, ValidationErrors};
+
+    #[test]
+    fn test_format_error_simple() {
+        let err = Error::msg("Simple error");
+        let formatted = format_error(&err);
+        assert!(formatted.contains("Simple error"));
+        assert!(formatted.contains("Error:"));
+    }
+
+    #[test]
+    fn test_format_validation_errors() {
+        let mut errors = ValidationErrors::new();
+        let mut err = ValidationError::new("custom_code");
+        err.message = Some(std::borrow::Cow::from("Custom message"));
+        errors.add("field1", err);
+
+        let anyhow_err = Error::from(errors);
+        let formatted = format_error(&anyhow_err);
+
+        assert!(formatted.contains("Configuration validation failed"));
+        assert!(formatted.contains("field1"));
+        assert!(formatted.contains("Custom message"));
+    }
+
+    #[test]
+    fn test_format_field_error_known_codes() {
+        let known_codes = vec![
+            ("duplicate_chart_name_namespace", "Duplicate chart detected"),
+            ("duplicate_repository_names", "Duplicate repository names"),
+            ("duplicate_destination_names", "Duplicate destination names"),
+            (
+                "chart_repo_not_found",
+                "Chart references a repository that does not exist",
+            ),
+            (
+                "chart_dest_not_found",
+                "Chart references a destination that does not exist",
+            ),
+            ("values_file_not_found", "Values file not found"),
+        ];
+
+        for (code, expected_msg) in known_codes {
+            let mut errors = ValidationErrors::new();
+            let mut err = ValidationError::new(code);
+            err.add_param(std::borrow::Cow::from("name"), &"test-chart");
+            err.add_param(std::borrow::Cow::from("namespace"), &"default");
+            err.add_param(std::borrow::Cow::from("file"), &"values.yaml");
+
+            errors.add("test_field", err);
+
+            let anyhow_err = Error::from(errors);
+            let formatted = format_error(&anyhow_err);
+
+            assert!(
+                formatted.contains(expected_msg),
+                "Failed for code: {}",
+                code
+            );
+        }
+    }
+
+    #[test]
+    fn test_format_validation_errors_nested() {
+        use validator::Validate;
+
+        #[derive(Validate)]
+        struct Inner {
+            #[validate(length(min = 5, message = "Inner too short"))]
+            val: String,
+        }
+
+        #[derive(Validate)]
+        struct Outer {
+            #[validate(nested)]
+            inner: Inner,
+        }
+
+        let outer = Outer {
+            inner: Inner {
+                val: "bad".to_string(),
+            },
+        };
+
+        let res = outer.validate();
+        assert!(res.is_err());
+        let errors = res.err().unwrap();
+
+        let anyhow_err = Error::from(errors);
+        let formatted = format_error(&anyhow_err);
+
+        assert!(formatted.contains("inner.val"));
+        assert!(formatted.contains("Inner too short"));
+    }
+}

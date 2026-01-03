@@ -114,6 +114,26 @@ pub async fn run(args: DeployArgs, no_progress: bool, config_path: &std::path::P
                     chart.name,
                     e
                 ));
+
+                // Check if we should pause for debug
+                if helm_config.deploy_debug_pause && !args.no_interactive {
+                    tracker.println(&format!(
+                        "\n{} Deployment failed. Pausing for debug.",
+                        "⏸️ ".yellow()
+                    ));
+                    tracker.println(&format!(
+                        "{} Press {} to continue and exit...",
+                        "👉".cyan(),
+                        "Enter".bold()
+                    ));
+
+                    // Suspend progress bar to allow clean input
+                    tracker.suspend(|| {
+                        let mut input = String::new();
+                        let _ = std::io::stdin().read_line(&mut input);
+                    });
+                }
+
                 // Fail fast
                 break;
             }
@@ -600,6 +620,7 @@ mod tests {
             helm_args: "default".to_string(),
             diff_enabled: false,
             diff_args: None,
+            deploy_debug_pause: true,
         };
 
         let result = construct_helm_args(&chart, &global).unwrap();
@@ -630,6 +651,7 @@ mod tests {
             helm_args: "default".to_string(),
             diff_enabled: false,
             diff_args: None,
+            deploy_debug_pause: true,
         };
 
         let result = construct_helm_args(&chart, &global).unwrap();

@@ -67,6 +67,8 @@ pub struct VesshelmConfig {
     pub diff_enabled: bool,
     #[serde(default)]
     pub diff_args: Option<String>,
+    #[serde(default = "default_true")]
+    pub deploy_debug_pause: bool,
 }
 
 fn default_true() -> bool {
