@@ -22,6 +22,7 @@ Designed as an alternative to  [helmfile](https://github.com/helmfile/helmfile),
 - **Ease of Use**:
   - **Interactive**: `add` command to easily onboard new charts from ArtifactHub, Git, or OCI.
   - **Autocompletion**: Comprehensive shell completion for commands and chart names.
+- **Secrets Management**: Integrated SOPS support for encrypted values files.
 - **User Interface**: Beautiful interactive CLI with progress bars for syncing and deployment.
 - **Configuration**: Strongly typed `vesshelm.yaml` configuration with validation.
 
@@ -224,7 +225,6 @@ vesshelm check-updates --only my-chart
 vesshelm check-updates --apply
 
 # Update and sync immediately
-# Update and sync immediately
 vesshelm check-updates --apply-sync
 ```
 
@@ -272,11 +272,30 @@ Safely removes chart releases from your cluster:
 # Uninstall a specific chart
 vesshelm uninstall my-chart
 
+# Interactive selection if name is omitted
+vesshelm uninstall
+
 # Skip confirmation
 vesshelm uninstall my-chart --no-interactive
 ```
 
-### 8. Validate
+### 8. Delete
+
+Removes a chart from your local configuration (`vesshelm.yaml`) and filesystem.
+- Offers interactive chart selection if multiple charts share the same name (e.g. different namespaces) or if no name is provided.
+- Can optionally uninstall the Helm release from the cluster during the process.
+- Updates dependencies in `vesshelm.lock`.
+- Non-destructively updates `vesshelm.yaml` preserving comments and formatting.
+
+```bash
+# Delete a specific chart
+vesshelm delete my-chart
+
+# Interactive selection
+vesshelm delete
+```
+
+### 9. Validate
 
 Ensures your configuration is correct before running operations:
 - validates YAML syntax and structure.
@@ -289,7 +308,7 @@ $ vesshelm validate
 Configuration is valid
 ```
 
-### 9. Autocompletion
+### 10. Autocompletion
 
 Generate shell completion scripts for your shell (bash, zsh, fish, etc.).
 
